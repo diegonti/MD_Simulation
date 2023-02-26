@@ -49,3 +49,12 @@ It is important to follow a familiar set of rules in order to be consistent with
     double precision :: manera_dos
     real*8           :: manera_tres 
     ```
+
+## Task Distribution
+- Main Program
+- Readers and Writers (I/O) &rarr; Read input file, write outputs
+- Initial Conditions &rarr; Positions (SC, BCC, FCC) and Velocities (bimodal, zero)
+- Interactions &rarr; Forces, Energies (total, V, T), Pressure, Momentum
+- Integrators &rarr; Velocity Verlet, Verlet, Euler // Thermostat
+- Simulation &rarr; PBC, MIC, boxmuller, RDF, MSD
+- Data Analysis (Python) &rarr; Stats and Visualization
