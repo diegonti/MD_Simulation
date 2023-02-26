@@ -1,13 +1,13 @@
 # Project I : MD Simulation of a VdW Gas
 
 ## Task Distribution
-- Main Program &rarr;
-- Readers and Writers (I/O) &rarr;
-- Initial Conditions &rarr; Diego
-- Interactions &rarr; 
-- Integrators &rarr;
-- Simulation &rarr;
-- Data Analysis (Python) &rarr; Diego
+- Main Program &rarr; Marc Alsina
+- Readers and Writers (I/O) &rarr; Emma Valdés
+- Initial Conditions &rarr; Diego Ontiveros
+- Interactions &rarr; Marc Alsina
+- Integrators &rarr; Ignacio Prieto
+- Simulation &rarr; Maitane Fariñas
+- Data Analysis (Python) &rarr; Diego Ontiveros
 
 <br>
 
