@@ -29,7 +29,7 @@ _Note from the lider_: I'll try to schedule myself and accept the pull request e
 ## Code
 It is important to follow a familiar set of rules in order to be consistent with the code, and therefore, avoid some painful bugs:
 
-- We will stick to the Fortran 2018 standard. Therefore, all compilations must include the -std=f2018 flag
+- We will stick to the Fortran 2018 standard. Therefore, all compilations must include the `-std=f2018` flag
 - The matrices regarding positions and velocities will be structured as 3xnº particles. That is, each column will represent a vector of positions or a vector of velocities for each particle. This is not arbritrary, this is becuse Fortran is used to work with columns.
 - To avoid extremely large function definitions, we will encapsulate all parameters in a Fortran derived type, such as:
     ```Fortran
@@ -44,22 +44,20 @@ It is important to follow a familiar set of rules in order to be consistent with
     And will be defined when reading the input parameter file.
 - We will work in double precission. It can be either definded by the following ways:
     ```Fortran
-    use, intrinsic :: iso_fortran_env, only: DP => REAL64
+    use, intrinsic   :: iso_fortran_env, only: DP => REAL64
     
     real(kind=DP)    :: manera_uno
     double precision :: manera_dos
     real*8           :: manera_tres 
     ```
+    As well, when defining a numerical value, define its numerical type with the `_DP` or `d` delimitiers at the end of the numerical definition.
 ### Code style
 
-The indentation is mandatory in order to force readability. Remember, a piece of code
-is more often readed than written, so try to remeber this fact when you are writing 
-your code. 
-Variables names must have sense in the context of its application, and don't use cryptic 
-names.
-Documentation is also mandatory. Since this is a collaboratory project, we have to 
-make sure that our code can be interpreted for other humans. Therefore, we will make use
-of the Google documentation style.
+The indentation is mandatory in order to force readability. Remember, a piece of code is more often readed than written, so try to apply this fact when you are writing your code. 
+
+Variables names must have sense in the context of its application, and don't use cryptic names.
+
+Documentation is also mandatory. Since this is a collaboratory project, we have to make sure that our code can be interpreted by other humans. Therefore, we will make useof the [Google documentation style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html). The language of implementation must be done in english.
 
 ## Task Distribution
 - Main Program
@@ -73,15 +71,7 @@ of the Google documentation style.
 ## Builds
 A build is simply a compilation of the whole program. We will work on two builds:
 
-- **Debug**: Focused on the program to work, and with the minimum number of bugs as possible.
-Therefore, we will make use of debugging compiler options, and we will try to solve those 
-warnings as much as possible.
-- **Release**: Focused on speed, we will use this build to produce results. Note that this code 
-will start once we validate or finnish the Debugging release.
+- **Debug**: Focused on the program to work, and with the minimum number of bugs as possible. Therefore, we will make use of debugging compiler options, and we will try to solve those warnings as much as possible.
+- **Release**: Focused on speed, we will use this build to produce results. Note that this code will start once we validate or finnish the Debugging release.
 
-Recall that some smart people in an office probably located in California has spent his/her time
-working out on smart checkings that trigger warnings when parts of our code doesn't makes sense or
-are succeptible to doesn't work properly. Therefore, the purpose of a warning is not to flood your 
-screen makeinf you feel like you're hacking the CNI, but to give you some smart advises in order
-to avoid bugs. Of course, there are warnings, like -Wtabs, that aren't quite relevant, but others
-can save us from hours of painful debugging.
+Recall that some smart people in an office probably located in California has spent his/her time working out on smart checkings that trigger warnings when parts of our code doesn't makes sense or are succeptible to doesn't work properly. Therefore, the purpose of a warning is not to flood your screen makeing you feel like you're hacking the CNI, but to give you some smart advises in order to avoid bugs. Of course, there are warnings, like -Wtabs, that aren't quite relevant, but others can save us from hours of painful debugging.
