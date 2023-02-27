@@ -5,8 +5,8 @@
 - Readers and Writers (I/O) &rarr; Emma Valdés
 - Initial Conditions &rarr; Diego Ontiveros
 - Interactions &rarr; Marc Alsina
-- Integrators &rarr; Ignacio Prieto
-- Simulation &rarr; Maitane Fariñas
+- Integrators &rarr; Ignacio Prieto & Emma Valdés
+- Simulation (PBC & MIC, RDF, SMD) &rarr; Maitane Fariñas
 - Data Analysis (Python) &rarr; Diego Ontiveros
 
 <br>
