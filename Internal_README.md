@@ -1,6 +1,6 @@
 # Introduction
-This is file which contains relevant information for the workflow of the following days. For the moment,
-the contents of this README will be located in this file, and if it is of interest, they can be moved
+This file contains relevant information regarding the workflow for the following days. For the moment,
+the contents of this README will be located in this file, and if it is of interest, they will be moved
 to the repository README. Therefore, this file is intended to be **readed only by the developers of this repository**.
 
 ## Git workflow
@@ -49,6 +49,16 @@ It is important to follow a familiar set of rules in order to be consistent with
     double precision :: manera_dos
     real*8           :: manera_tres 
     ```
+### Code style
+
+The indentation is mandatory in order to force readability. Remember, a piece of code
+is more often readed than written, so try to remeber this fact when you are writing 
+your code. 
+Variables names must have sense in the context of its application, and don't use cryptic 
+names.
+Documentation is also mandatory. Since this is a collaboratory project, we have to 
+make sure that our code can be interpreted for other humans. Therefore, we will make use
+of the Google documentation style.
 
 ## Task Distribution
 - Main Program
@@ -58,3 +68,18 @@ It is important to follow a familiar set of rules in order to be consistent with
 - Integrators &rarr; Velocity Verlet, Verlet, Euler // Thermostat
 - Simulation &rarr; PBC, MIC, boxmuller, RDF, MSD
 - Data Analysis (Python) &rarr; Stats and Visualization
+
+## Builds
+A build is simply a compilation of the whole program. We will work on two builds:
+    -**Debug**: Focused on the program to work, and with the minimum number of bugs as possible.
+    Therefore, we will make use of debugging compiler options, and we will try to solve those 
+    warnings as much as possible.
+    -**Release**: Focused on speed, we will use this build to produce results. Note that this code 
+    will start once we validate or finnish the Debugging release.
+
+Recall that some smart people in an office probably located in California has spent his/her time
+working out on smart checkings that trigger warnings when parts of our code doesn't makes sense or
+are succeptible to doesn't work properly. Therefore, the purpose of a warning is not to flood your 
+screen makeinf you feel like you're hacking the CNI, but to give you some smart advises in order
+to avoid bugs. Of course, there are warnings, like -Wtabs, that aren't quite relevant, but others
+can save us from hours of painful debugging.
