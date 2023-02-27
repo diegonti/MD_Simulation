@@ -29,6 +29,7 @@ _Note from the lider_: I'll try to schedule myself and accept the pull request e
 ## Code
 It is important to follow a familiar set of rules in order to be consistent with the code, and therefore, avoid some painful bugs:
 
+- We will stick to the Fortran 2018 standard. Therefore, all compilations must include the -std=f2018 flag
 - The matrices regarding positions and velocities will be structured as 3xnº particles. That is, each column will represent a vector of positions or a vector of velocities for each particle. This is not arbritrary, this is becuse Fortran is used to work with columns.
 - To avoid extremely large function definitions, we will encapsulate all parameters in a Fortran derived type, such as:
     ```Fortran
@@ -71,11 +72,12 @@ of the Google documentation style.
 
 ## Builds
 A build is simply a compilation of the whole program. We will work on two builds:
-    -**Debug**: Focused on the program to work, and with the minimum number of bugs as possible.
-    Therefore, we will make use of debugging compiler options, and we will try to solve those 
-    warnings as much as possible.
-    -**Release**: Focused on speed, we will use this build to produce results. Note that this code 
-    will start once we validate or finnish the Debugging release.
+
+- **Debug**: Focused on the program to work, and with the minimum number of bugs as possible.
+Therefore, we will make use of debugging compiler options, and we will try to solve those 
+warnings as much as possible.
+- **Release**: Focused on speed, we will use this build to produce results. Note that this code 
+will start once we validate or finnish the Debugging release.
 
 Recall that some smart people in an office probably located in California has spent his/her time
 working out on smart checkings that trigger warnings when parts of our code doesn't makes sense or
