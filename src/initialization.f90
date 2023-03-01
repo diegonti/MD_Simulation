@@ -26,9 +26,9 @@ module initialization
 
         !# Dejo numeros real*4 porque sino hay error y la M da uno menor. Round?->INT
         L = (N/dens)**(1.d0/3.d0)
-        if (cell=="sc") then; M = (N)**(1./3.)
-        else if (cell=="fcc") then; M = (N/4.)**(1./3.)
-        else if (cell=="bcc") then; M = (N/2.)**(1./3.)
+        if (cell=="sc") then; M = int((N)**(1./3.))
+        else if (cell=="fcc") then; M = int((N/4.)**(1./3.))
+        else if (cell=="bcc") then; M = int((N/2.)**(1./3.))
         else; print*, "Select a valid initial position: sc, bcc, fcc."
         end if
     
