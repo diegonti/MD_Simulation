@@ -5,6 +5,36 @@ module initialization
     ! 2 types of initial velocities are implemented -> bimodal, zero.
 
     contains
+
+    subroutine getInitialParams(cell,N,dens,M,L,a)
+        ! Returns the initial cell parameters of the simulation.
+        ! Inputs: 
+        ! cell: String with the name of the cell (sc, bcc, fcc)
+        ! N : Number of particles
+        ! dens : Density of the system.
+        ! Outputs:
+        ! M : Number of cells in one direction.
+        ! L : Length of the simulation box.
+        ! a : Lattice parameter of the unit cell (L/M).
+
+        character(*), intent(in) :: cell
+        integer, intent(in) :: N
+        double precision, intent(in) :: dens
+        integer, intent(out) :: M
+        double precision, intent(out) :: L, a
+        
+
+        !# Dejo numeros real*4 porque sino hay error y la M da uno menor. Round?->INT
+        L = (N/dens)**(1.d0/3.d0)
+        if (cell=="sc") then; M = (N)**(1./3.)
+        else if (cell=="fcc") then; M = (N/4.)**(1./3.)
+        else if (cell=="bcc") then; M = (N/2.)**(1./3.)
+        else; print*, "Select a valid initial position: sc, bcc, fcc."
+        end if
+    
+        a = L/M              ! Lattice parameter
+        
+    end subroutine getInitialParams
     
 
     subroutine initializePositions(M,a,r,cell)
