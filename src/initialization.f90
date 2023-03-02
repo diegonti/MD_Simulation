@@ -26,14 +26,14 @@ module initialization
         
 
         !# Dejo numeros real*4 porque sino hay error y la M da uno menor. Round?->INT
-        L = (N/density)**(1.d0/3.d0)
-        if (cell=="sc") then; M = int((N)**(1./3.),kind=i64)
-        else if (cell=="fcc") then; M = int((N/4.)**(1./3.), kind=i64)
-        else if (cell=="bcc") then; M = int((N/2.)**(1./3.), kind=i64)
+        L = (real(N,kind=dp)/density)**(1.d0/3.d0)
+        if (cell=="sc") then; M = int((real(N,kind=dp))**(1.d0/3.d0),kind=i64)
+        else if (cell=="fcc") then; M = int((real(N,kind=dp)/4.d0)**(1.d0/3.d0), kind=i64)
+        else if (cell=="bcc") then; M = int((real(N,kind=dp)/2.d0)**(1.d0/3.d0), kind=i64)
         else; print*, "Select a valid initial position: sc, bcc, fcc."
         end if
     
-        a = L/M            ! Lattice parameter
+        a = L/real(M, kind=dp)            ! Lattice parameter
         
     end subroutine getInitialParams
     
@@ -115,7 +115,7 @@ module initialization
             do j=0,M-1_i64
                 do k=0,M-1_i64
                     do at=1,size(ucell, dim=2,kind=i64)
-                        r(:, p) = ucell(:,at) + (/i,j,k/)
+                        r(:, p) = ucell(:,at) + (/real(i,kind=dp),real(j,kind=dp),real(k,kind=dp)/)
                         !p = at + (k+(j+i*M)*M)*size(ucell, dim=2, kind=i64) 
                         p = p + 1_i64 
                     end do
