@@ -5,7 +5,7 @@ FC=gfortran
 VPATH=src/
 
 # Fortran- related flags
-F_FLAGS=-std=f2008
+F_FLAGS=-std=f2018
 
 # Debug related flags:
 COMP_D_FLAGS=-g3 -Og -fbacktrace -Wall -Wextra -pedantic -fcheck=all,no-array-temps -ffpe-trap=invalid,zero,overflow,underflow,denormal -ffpe-summary=all -Wconversion-extra 
