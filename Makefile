@@ -33,7 +33,8 @@ testing.o: testing.f90
 # Defined recipies:
 .PHONY: clean
 clean:
-	rm *.o *.mod
+	rm -f *.o *.mod
+	rm -f ./src/*.o ./src/*.mod
 
 .PHONY: run_serial
 run_serial:
