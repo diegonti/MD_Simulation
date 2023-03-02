@@ -1,4 +1,8 @@
+# Fortran
 *.mod
 *.o
 *.out
 *.x
+
+# Python
+__pycache__/
