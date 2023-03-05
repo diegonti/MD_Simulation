@@ -46,7 +46,7 @@ The indentation is mandatory in order to force readability. Remember, a piece of
 
 Variables names must have sense in the context of its application, and don't use cryptic names.
 
-Documentation is also mandatory. Since this is a collaboration project, we have to make sure that our code can be interpreted by other humans. Therefore, we will make use of the [Google documentation style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html). The language of implementation must be done in English.
+Documentation is also mandatory. Since this is a collaboration project, we have to make sure that our code can be interpreted by other humans. Therefore, we will make use of the [Google documentation style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html). The language of implementation must be done in English. It is also important in the documentation to specify the type of the data that is handeled. When matrices are involved, they will be defined as `data_type[x,y,z,...]` where x, y, z are the dimensions along the specified rank.
 
 ## Task Distribution
 - Main Program
