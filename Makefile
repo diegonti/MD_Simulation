@@ -15,7 +15,7 @@ COMP_R_FLAGS=#-O3 -funroll-loops -ftree-vectorize -finline-functions -flto=2 -fw
 
 # ~ LINKING ~
 all: MDEMI.x
-MDEMI.x: testing.o initialization.o main.o
+MDEMI.x: readers_mod.o testing.o initialization.o main.o
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) $^ -o $@
 
 
@@ -28,6 +28,9 @@ initialization.o: initialization.f90
 
 testing.o: testing.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
+
+readers_mod.o: readers_mod.f90
+	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^	
 
 
 # Defined recipies:
