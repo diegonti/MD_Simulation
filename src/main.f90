@@ -13,12 +13,13 @@ program main
 
     ! Scalar variables
     integer(kind=i32) :: status_cli
-    integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, write_frame, log_unit
+    integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, write_frame, &
+    log_unit, traj_unit
     real(kind=dp)     :: init_time, end_time, density, L, a, T, lj_epsilon, lj_sigma, mass, dt, &
     andersen_nu
 
     ! String variables
-    character(len=2048)           :: nml_path, sim_name, log_name
+    character(len=2048)           :: nml_path, sim_name, log_name, traj_name
     character(len=:), allocatable :: cell_type
     character(len=:), allocatable :: init_vel
 
@@ -52,10 +53,15 @@ program main
     allocate(v(3,N))
 
     ! Opening files
-    ! log_unit -> file where the simulation time, energy, instant temperature, etc.. will be placed
+    ! log_unit  -> file where the simulation time, energy, instant temperature, etc.. will be placed
+    ! traj_name -> trajectory file, where the xyz of each snapshot is placed 
 
     log_name = trim(sim_name) // "_logfile.log"
     open(newunit=log_unit, file=trim(log_name), access='sequential', action='write', &
+    status='replace', form='formatted')
+
+    traj_name = trim(sim_name) // "_trajectory.xyz"
+    open(newunit=traj_unit, file=trim(traj_name), access='sequential', action='write', &
     status='replace', form='formatted')
 
     ! ~ Initialization of the system ~
@@ -63,11 +69,13 @@ program main
     call initializePositions(M,a,r,cell_type)
     call initializeVelocities(T,v,init_vel)
 
-    !call testMatrix(r)
+    ! ~ Starting the trajectory of the system ~
+    
 
 
     ! ~ Closing files ~
     close(log_unit)
+    close(traj_unit)
     
     ! ~ Program finalization ~
     call cpu_time(end_time)
