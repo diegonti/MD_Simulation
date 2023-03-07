@@ -53,6 +53,7 @@ module initialization
         double precision, intent(in) :: lj_epsilon,lj_sigma,mass
         double precision, intent(inout) :: density,dt
         double precision :: ru_time,ru_dens
+        double precision, parameter :: Na = 6.0221408d23
 
         ! Conversion factors between reduced and real units
         ru_time = sqrt(mass*(lj_sigma*1d-10)**2_i64 / (lj_epsilon*1d6))*1d12    ! t in picoseconds
