@@ -105,6 +105,8 @@ if __name__ == "__main__":
     data = dataT.T                          					# Each parameter in a column
     t,E,Epot,Ekin,Tinst,P,MSD,p = data      					# Getting each parameter
     
+    # dataRDF = np.loadtxt("RDF_out.dat").T
+    # r,RDF = dataRDF
 
     # Energies Plot
     makePlot(t,[Ekin,Epot,E],["r","b","k"],["$E_{kin}$","$E_{pot}$","$E$"],
