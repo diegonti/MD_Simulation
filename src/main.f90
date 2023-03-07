@@ -1,8 +1,7 @@
 program main
     use, intrinsic :: iso_fortran_env, only: DP => real64, I64 => int64, i32 => int32, input_unit, output_unit, error_unit
     ! Module definitions
-    use            :: initialization, only: getInitialParams, initializePositions, initializeVelocities, initializeGeneral, &
-    initBimodal
+    use            :: initialization, only: changeIUnits, getInitialParams, initializePositions, initializeVelocities
     use            :: testing
     use            :: readers_m,      only: read_nml
     implicit none
@@ -65,6 +64,7 @@ program main
     status='replace', form='formatted')
 
     ! ~ Initialization of the system ~
+    call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt)
     call getInitialParams(cell_type,N,density,M,L,a)
     call initializePositions(M,a,r,cell_type)
     call initializeVelocities(T,v,init_vel)
