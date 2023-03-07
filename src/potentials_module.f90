@@ -1,6 +1,6 @@
 module potential_m
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
-    use periodic_bc
+    use periodic_bc, only: pbc
     implicit none
 
     public :: calc_pressure, calc_KE, calc_vdw_pbc, calc_vdw_force
