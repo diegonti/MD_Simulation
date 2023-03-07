@@ -1,9 +1,10 @@
 program main
     use, intrinsic :: iso_fortran_env, only: DP => real64, I64 => int64, i32 => int32, input_unit, output_unit, error_unit
     ! Module definitions
-    use            :: initialization, only: getInitialParams, initializePositions, initializeVelocities, initializeGeneral, initBimodal
+    use            :: initialization, only: getInitialParams, initializePositions, initializeVelocities, initializeGeneral, &
+    initBimodal
     use            :: testing
-    use            :: readers_m, only: read_nml
+    use            :: readers_m,      only: read_nml
     implicit none
 
     ! ~ Memory definition ~
@@ -13,8 +14,8 @@ program main
     ! Scalar variables
     integer(kind=i32) :: status_cli
     integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, write_frame
-    real(kind=dp)     :: init_time, end_time, density, L, a, T, lj_epsilon, lj_sigma, mass, dt&
-    andersen_nu, 
+    real(kind=dp)     :: init_time, end_time, density, L, a, T, lj_epsilon, lj_sigma, mass, dt, &
+    andersen_nu
 
     ! String variables
     character(len=2048)           :: nml_path, sim_name
@@ -39,23 +40,20 @@ program main
     write_stats=write_stats, gdr_num_bins=gdr_num_bins, write_frame=write_frame, sim_name=sim_name, &
     cell_type=cell_type, init_velocities=init_vel, temperature=T)
 
-    ! Test INPUTS
-    N = 32_i64          ! Number of particles
-    density = 0.8d0     ! Density
-    T = 2d0             ! Temperature
+    ! Trimming character variables in order to avoid blank spaces
+    sim_name = trim(sim_name)
+    cell_type = trim(cell_type)
+    init_vel = trim(init_vel)
 
-    ! The below strings for inicialization should be gathered from the input of the user
-    ! if its possible, whatever the user inputs, change it to lower case. (subroutine lowercase @diegonti)
-    cell_type = trim("fcc")
-    init_vel = trim("bimodal")
+    write(output_unit, '(A)') 'Successfully loaded parameter file, starting simulation'
 
     ! Allocate Memory
     allocate(r(3,N))
     allocate(v(3,N))
 
     ! Initialization of the system
-    call getInitialParams(cell,N,density,M,L,a)
-    call initializePositions(M,a,r,cell)
+    call getInitialParams(cell_type,N,density,M,L,a)
+    call initializePositions(M,a,r,cell_type)
     call initializeVelocities(T,v,init_vel)
 
     !call testMatrix(r)

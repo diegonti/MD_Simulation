@@ -4,7 +4,7 @@ module initialization
     ! 3 types of initial positions are implemented -> SC, BCC, FCC.
     ! 2 types of initial velocities are implemented -> bimodal, zero.
 
-    use, intrinsic :: iso_fortran_env, only: DP => real64, I64 => int16, input_unit, output_unit
+    use, intrinsic :: iso_fortran_env, only: DP => real64, I64 => int64, input_unit, output_unit
     contains
 
     subroutine getInitialParams(cell,N,density,M,L,a)
