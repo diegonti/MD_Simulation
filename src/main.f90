@@ -13,12 +13,12 @@ program main
 
     ! Scalar variables
     integer(kind=i32) :: status_cli
-    integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, write_frame
+    integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, write_frame, log_unit
     real(kind=dp)     :: init_time, end_time, density, L, a, T, lj_epsilon, lj_sigma, mass, dt, &
     andersen_nu
 
     ! String variables
-    character(len=2048)           :: nml_path, sim_name
+    character(len=2048)           :: nml_path, sim_name, log_name
     character(len=:), allocatable :: cell_type
     character(len=:), allocatable :: init_vel
 
@@ -47,11 +47,18 @@ program main
 
     write(output_unit, '(A)') 'Successfully loaded parameter file, starting simulation'
 
-    ! Allocate Memory
+    ! ~ Memmory allocation ~
     allocate(r(3,N))
     allocate(v(3,N))
 
-    ! Initialization of the system
+    ! Opening files
+    ! log_unit -> file where the simulation time, energy, instant temperature, etc.. will be placed
+
+    log_name = trim(sim_name) // "_logfile.log"
+    open(newunit=log_unit, file=trim(log_name), access='sequential', action='write', &
+    status='replace', form='formatted')
+
+    ! ~ Initialization of the system ~
     call getInitialParams(cell_type,N,density,M,L,a)
     call initializePositions(M,a,r,cell_type)
     call initializeVelocities(T,v,init_vel)
@@ -59,6 +66,10 @@ program main
     !call testMatrix(r)
 
 
+    ! ~ Closing files ~
+    close(log_unit)
+    
+    ! ~ Program finalization ~
     call cpu_time(end_time)
     write(output_unit, '(A,F12.8,A)') 'Execution done in: ', end_time - init_time, ' seconds.'
 
