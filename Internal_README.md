@@ -31,17 +31,6 @@ It is important to follow a familiar set of rules in order to be consistent with
 
 - We will stick to the Fortran 2018 standard. Therefore, all compilations must include the `-std=f2018` flag
 - Matrices regarding positions and velocities will be structured as 3xnº particles. That is, each column will represent a vector of positions or a vector of velocities for each particle. This is not arbitrary, this is because Fortran is used to work with columns.
-- To avoid extremely large function definitions, we will encapsulate all parameters in a Fortran derived type, such as:
-    ```Fortran
-    type :: parameters
-        integer(kind=i64) :: n_steps
-        .
-        .
-        .
-
-    end type parameters
-    ```
-    And will be defined when reading the input parameter file.
 - We will work in double precission. It can be either definded by the following ways:
     ```Fortran
     use, intrinsic   :: iso_fortran_env, only: DP => REAL64
@@ -57,7 +46,7 @@ The indentation is mandatory in order to force readability. Remember, a piece of
 
 Variables names must have sense in the context of its application, and don't use cryptic names.
 
-Documentation is also mandatory. Since this is a collaboration project, we have to make sure that our code can be interpreted by other humans. Therefore, we will make use of the [Google documentation style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html). The language of implementation must be done in English.
+Documentation is also mandatory. Since this is a collaboration project, we have to make sure that our code can be interpreted by other humans. Therefore, we will make use of the [Google documentation style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html). The language of implementation must be done in English. It is also important in the documentation to specify the type of the data that is handeled. When matrices are involved, they will be defined as `data_type[x,y,z,...]` where x, y, z are the dimensions along the specified rank.
 
 ## Task Distribution
 - Main Program

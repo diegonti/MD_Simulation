@@ -1,5 +1,6 @@
 module potential_m
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
+    use periodic_bc, only: pbc
     implicit none
 
     public :: calc_pressure, calc_KE, calc_vdw_pbc, calc_vdw_force
@@ -32,7 +33,8 @@ contains
         real(kind=dp)                             :: press
         ! Internal variables
         integer(kind=i64)                         :: i_part, j_part, n_p
-        real(kind=dp), dimension(3)               :: rij, fij
+        real(kind=dp), dimension(3)               :: fij
+        real(kind=dp), dimension(3,1)             :: rij
         real(kind=dp)                             :: dij, cutoff2, virial, vol
 
         press = 0.0_dp
@@ -45,23 +47,23 @@ contains
             do j_part = i_part + 1, n_p
 
                 ! Calculem rij
-                rij(1) = positions(1, i_part) - positions(1, j_part)
-                rij(2) = positions(2, i_part) - positions(2, j_part)
-                rij(3) = positions(3, i_part) - positions(3, j_part)
+                rij(1,1) = positions(1, i_part) - positions(1, j_part)
+                rij(2,1) = positions(2, i_part) - positions(2, j_part)
+                rij(3,1) = positions(3, i_part) - positions(3, j_part)
 
-                call pbc(x=rij, l_=lenth)
+                call pbc(rij, lenth)
                 
                 ! Calculem fij
-                dij = (rij(1)**2) + (rij(2)**2) + (rij(3)**2)
+                dij = (rij(1,1)**2) + (rij(2,1)**2) + (rij(3,1)**2)
 
                 if (dij < cutoff2) then
 
-                    fij(1) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(1)
-                    fij(2) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(2)
-                    fij(3) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(3)
+                    fij(1) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(1,1)
+                    fij(2) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(2,1)
+                    fij(3) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(3,1)
 
                     ! Upgredagem el valor de la pressio
-                    virial = virial + dot_product(rij, fij)
+                    virial = virial + dot_product(rij(:,1), fij)
                 end if
 
             end do
@@ -127,7 +129,7 @@ contains
         ! Internal variables
         real(kind=DP)                              :: dist, ecalc, cutoff2
         integer(kind=I64)                          :: i, j, num_particles
-        real(kind=DP), dimension(3)                :: rij
+        real(kind=DP), dimension(3,1)              :: rij
 
         ! Initializing parameters
         vdw_calc = 0.0_DP
@@ -137,13 +139,13 @@ contains
 
         do j = 1, num_particles - 1
             do i = j + 1, num_particles
-                rij(1) = pos(1, j) - pos(1, i)
-                rij(2) = pos(2, j) - pos(2, i)
-                rij(3) = pos(3, j) - pos(3, i)
+                rij(1,1) = pos(1, j) - pos(1, i)
+                rij(2,1) = pos(2, j) - pos(2, i)
+                rij(3,1) = pos(3, j) - pos(3, i)
                 
-                call pbc(x=rij, l_=boundary)
+                call pbc(rij, boundary)
 
-                dist = (rij(1)**2) + (rij(2)**2) + (rij(3)**2)
+                dist = (rij(1,1)**2) + (rij(2,1)**2) + (rij(3,1)**2)
 
                 if (dist < cutoff2) then
                     
@@ -182,9 +184,9 @@ contains
         real(kind=DP), intent(in)                     :: cutoff, boundary
         real(kind=DP), intent(out), dimension(:, :)   :: forces
         ! Internal variables
-        integer(kind=I64)           :: n_part, i, j
-        real(kind=DP)               :: dist, cutoff2
-        real(kind=DP), dimension(3) :: rij
+        integer(kind=I64)             :: n_part, i, j
+        real(kind=DP)                 :: dist, cutoff2
+        real(kind=DP), dimension(3,1) :: rij
 
         n_part = size(pos, dim=2, kind=I64)
 
@@ -195,25 +197,25 @@ contains
         do i = 1, n_part - 1
             do j = i + 1, n_part
                 
-                rij(1) = pos(1, i) - pos(1, j)
-                rij(2) = pos(2, i) - pos(2, j)
-                rij(3) = pos(3, i) - pos(3, j)
+                rij(1,1) = pos(1, i) - pos(1, j)
+                rij(2,1) = pos(2, i) - pos(2, j)
+                rij(3,1) = pos(3, i) - pos(3, j)
                 
-                call pbc(x=rij, l_=boundary)
+                call pbc(rij, boundary)
                 
-                dist = (rij(1)**2) + (rij(2)**2) + (rij(3)**2)
+                dist = (rij(1,1)**2) + (rij(2,1)**2) + (rij(3,1)**2)
                 
                 if (dist < cutoff) then
                     
                     ! Calculem la forc entre particula i, j
 
-                    forces(1, i) = forces(1, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(1)
-                    forces(2, i) = forces(2, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(2)
-                    forces(3, i) = forces(3, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(3)
+                    forces(1, i) = forces(1, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(1,1)
+                    forces(2, i) = forces(2, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(2,1)
+                    forces(3, i) = forces(3, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(3,1)
 
-                    forces(1, j) = forces(1, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(1)
-                    forces(2, j) = forces(2, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(2)
-                    forces(3, j) = forces(3, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(3)
+                    forces(1, j) = forces(1, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(1,1)
+                    forces(2, j) = forces(2, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(2,1)
+                    forces(3, j) = forces(3, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(3,1)
 
                 end if
             end do

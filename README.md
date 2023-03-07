@@ -1,5 +1,16 @@
 # Project I : MD Simulation of a VdW Gas
 
+
+## Table of contents
+
+- [Installing](#installing)
+- [Task Distribution](#task-distribution)
+- [Contributors](#contributors)
+
+## Installing
+
+This project is designed to be compiled on Unix-type machines (Linux/macOS). The autorhs do not guarantee its correct compilation on Windows machines.
+
 ## Task Distribution
 - Main Program &rarr; Marc Alsina
 - Readers and Writers (I/O) &rarr; Emma Valdés
@@ -11,7 +22,7 @@
 
 <br>
 
-# Contributors
+## Contributors
 
 |  Marc Alsina   |  Maitane Fariñas  |  Diego Ontiveros   |  Ignacio Prieto   |  Emma Valdés  |
 | -------------- | ----------------- | ------------------ | ----------------- | ------------- |
