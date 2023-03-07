@@ -32,7 +32,7 @@ testing.o: testing.f90
 readers_mod.o: readers_mod.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
-readers_mod.o: writers_mod.f90
+writers_mod.o: writers_mod.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
 integrators.o: integrators.f90 pbc.o potentials_module.o
