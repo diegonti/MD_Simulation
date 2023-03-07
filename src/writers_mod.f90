@@ -10,6 +10,7 @@ module writers_m
     subroutine writeSystem(unit,lj_epsilon,lj_sigma,mass, time,E,Epot,Ekin,T,press,MSD,momentum)
         ! Writes system data to the main output file. Changes reduced units 
         ! used in simulation to real units.
+        !
         ! Args:
         !   unit        (INT64)  : File unit to write on.
         !   lj_epsilon  (REAL64) : Lennard Jones epsilon parameter for the gas (in kJ/mol).
@@ -54,6 +55,7 @@ module writers_m
     subroutine writePositions(r,unit)
         ! Writes current position in the specified file (XYZ format).
         ! In a loop, writes trajectory.
+        !
         ! Args:
         !   r       (REAL64[3,N]) : 3xN Positions matrix.  
         !   unit    (INT64)       : File unit to write on.
