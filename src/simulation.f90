@@ -1,7 +1,7 @@
 module simulation
         
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int16
-    use periodic_bc
+    use            :: periodic_bc, only: PBC
 
     implicit none
 
