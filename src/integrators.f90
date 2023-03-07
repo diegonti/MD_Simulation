@@ -1,12 +1,13 @@
 module integrators
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
+    use            :: potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc
+    use            :: periodic_bc, only: PBC
     implicit none
     public :: verlet, vel_verlet
+
 contains
 
     subroutine verlet(positions,velocities,dt,nts,cutoff,a_box)
-    use potential_m
-    use periodic_bc
     implicit none
     ! subroutine that integrates newton's equations of motion by means of the verlet algorithm
 
@@ -60,8 +61,6 @@ contains
 
 
     subroutine vel_verlet(positions,velocities,dt,nts,cutoff,a_box)
-    use potential_m
-    use periodic_bc
     implicit none
     ! subroutine that integrates newton's equations of motion by means of the velocity verlet algorithm
 
@@ -113,4 +112,5 @@ contains
     !close(1)
     close(2)
     end subroutine
+
 end module
