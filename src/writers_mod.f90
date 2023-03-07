@@ -8,12 +8,14 @@ module writers_m
     contains
 
     subroutine writeSystem(unit,lj_epsilon,lj_sigma,mass, time,E,Epot,Ekin,T,press,MSD,momentum)
-        ! Writes system data to the main output file.Changes reduced units 
+        ! Writes system data to the main output file. Changes reduced units 
         ! used in simulation to real units.
-        ! unit : file unit to write on.
-        ! lj_epsilon : Lennard Jones epsilon parameter for the gas (in kJ/mol)
-        ! lj_sigma : Lennard Jones sigma parameter for the gas (in Ang)
-        ! mass : Molar Mass of the gas (g/mol)
+        ! Args:
+        !   unit        (INT64)  : File unit to write on.
+        !   lj_epsilon  (REAL64) : Lennard Jones epsilon parameter for the gas (in kJ/mol).
+        !   lj_sigma    (REAL64) : Lennard Jones sigma parameter for the gas (in Ang).
+        !   mass        (REAL64) : Molar Mass of the gas (g/mol).
+        !   *args       (REAL64) : Simulation params to write. (time,E,Epot,Ekin,T,press,MSD,momentum)
         
         integer(kind=i64), intent(in) :: unit
         double precision, intent(in) :: lj_epsilon,lj_sigma,mass
@@ -52,8 +54,9 @@ module writers_m
     subroutine writePositions(r,unit)
         ! Writes current position in the specified file (XYZ format).
         ! In a loop, writes trajectory.
-        ! r : 3xN Positions matrix. 
-        ! unit : file unit to write on.
+        ! Args:
+        !   r       (REAL64[3,N]) : 3xN Positions matrix.  
+        !   unit    (INT64)       : File unit to write on.
         implicit none
         double precision, intent(in),dimension(:,:) :: r
         integer(kind=i64), intent(in) :: unit
@@ -64,7 +67,7 @@ module writers_m
         write(unit,*) N
         write(unit,*)
         do i= 1,N
-            write(unit,*) "Ar", r(:,i)
+            write(unit,*) "A", r(:,i)
         end do
 
     end subroutine writePositions
