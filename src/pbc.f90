@@ -24,8 +24,8 @@ contains
         ! local variables
         integer(kind=i64)                               :: i, j, N, M
 
-        N = size(positions(1,:))
-        M = size(positions(:,1))
+        N = size(positions(1,:),kind=i64)
+        M = size(positions(:,1),kind=i64)
 
         do j = 1, M
             do i = 1, N

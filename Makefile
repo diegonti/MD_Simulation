@@ -15,7 +15,7 @@ COMP_R_FLAGS=#-O3 -funroll-loops -ftree-vectorize -finline-functions -flto=2 -fw
 
 # ~ LINKING ~
 all: MDEMI.x
-MDEMI.x: integrators.o readers_mod.o testing.o initialization.o main.o
+MDEMI.x: integrators.o readers_mod.o writers_mod.o testing.o initialization.o main.o
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) $^ -o $@
 
 
@@ -30,6 +30,9 @@ testing.o: testing.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
 readers_mod.o: readers_mod.f90
+	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
+
+writers_mod.o: writers_mod.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
 integrators.o: integrators.f90 pbc.o potentials_module.o
@@ -48,7 +51,8 @@ simulation.o: simulation.f90 pbc.o
 # Defined recipies:
 .PHONY: clean
 clean:
-	rm *.o *.mod
+	rm -f *.o *.mod
+	rm -f ./src/*.o ./src/*.mod
 
 .PHONY: run_serial
 run_serial:
