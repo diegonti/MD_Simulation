@@ -249,4 +249,26 @@ contains
 
     end subroutine compute_com_momenta
 
+    pure function calc_Tinst(ke, np) result(tinst)
+    implicit none
+    ! Author: Marc Alsina <marcalsinac@gmail.com>
+    ! Subroutine to compute the instantaneous temperature
+    !
+    ! Args:
+    !   ke (REAL64): instant kinetic energy
+    !   np (INT64) : Number of particles in the system
+    !
+    ! Returns:
+    !   tinst (REAL64): Instant temperature
+
+    
+    ! In/Out variables
+    real(kind=dp), intent(in)     :: ke
+    integer(kind=i64), intent(in) :: np
+    real(kind=dp)                 :: tinst
+
+    tinst = (2.0_DP / (3.0_DP * real(np, kind=dp))) * ke
+
+    end function calc_Tinst
+
 end module potential_m
