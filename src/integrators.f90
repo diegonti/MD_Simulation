@@ -1,7 +1,7 @@
 module integrators
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
-    use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc
     use periodic_bc, only: PBC
+    use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc
     use simulation, only: MSD
 
     implicit none
@@ -46,7 +46,7 @@ contains
             u_ene = calc_vdw_pbc(positions,cutoff,a_box)
             pres = calc_pressure(a_box, positions, temp, cutoff)
             ms_dist = msd(posold,positions)
-            write(2, '(5(f12.8,1x))') i_ts*dt,kin_ene,u_ene,pres,ms_dist
+            write(2, '(5(f12.8,1x))') dble(i_ts)*dt,kin_ene,u_ene,pres,ms_dist
 
             do j=1,np
                 do i=1,3
@@ -95,7 +95,7 @@ contains
             kin_ene = calc_KE(velocities)
             u_ene = calc_vdw_pbc(positions,cutoff,a_box)
             pres = calc_pressure(a_box, positions, temp, cutoff)
-            write(2, '(4(f12.8,1x))') i_ts*dt,kin_ene,u_ene,pres
+            write(2, '(4(f12.8,1x))') dble(i_ts)*dt,kin_ene,u_ene,pres
 
             do j=1,np
                 do i=1,3
@@ -136,20 +136,31 @@ contains
     implicit none
     ! Andersen thermostat, changes the velocities in a system with a certain probability that depends on the temperature
         real(kind=dp), intent(in) :: nu,temp
-        real(kind=dp), dimension(n,3), intent(inout) :: vel
+        real(kind=dp), dimension(:,:), intent(inout) :: vel
         real(kind=dp) :: sig, nurand, x1, x2
-        integer(kind=i64) :: i,k, seed = 165432156
+        integer(kind=i64) :: i,k,N
+        integer :: state_size
+        integer, allocatable, dimension(:) :: state
+        integer, parameter:: seed_number = 165432156
 
+        N = size(vel,dim=2,kind=i64)
         sig = dsqrt(temp) !temperature t is a parameter defined in parameters.f90
-        call srand(seed)
-        do i=1,n
+        
+        ! Setting Random Seed
+        call random_seed( size=state_size )
+        allocate(state(state_size))
+        state = seed_number
+        call random_seed( put=state )
+        
+        do i=1,N
         ! a random number is generated for every particle,
         ! only if this number < nu, the particle's velocity is changed
-            nurand = rand()
+
+            call random_number(nurand)
             if (nurand < nu) then
                 do k=1,3
-                    x1 = rand()
-                    x2 = rand()
+                    call random_number(x1)
+                    call random_number(x2)
 
                     call boxmuller(sig, x1, x2, vel(i,k))
                 enddo

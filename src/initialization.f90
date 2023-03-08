@@ -27,9 +27,9 @@ module initialization
         double precision, intent(out) :: L, a
         
         L = (real(N,kind=dp)/density)**(1.d0/3.d0)
-        if (cell=="sc") then; M = int((real(N,kind=dp))**(1.d0/3.d0),kind=i64)
-        else if (cell=="fcc") then; M = int((real(N,kind=dp)/4.d0)**(1.d0/3.d0), kind=i64)
-        else if (cell=="bcc") then; M = int((real(N,kind=dp)/2.d0)**(1.d0/3.d0), kind=i64)
+        if (cell=="sc") then; M = nint((real(N,kind=dp))**(1.d0/3.d0),kind=i64)
+        else if (cell=="fcc") then; M = nint((real(N,kind=dp)/4.d0)**(1.d0/3.d0), kind=i64)
+        else if (cell=="bcc") then; M = nint((real(N,kind=dp)/2.d0)**(1.d0/3.d0), kind=i64)
         else; print*, "Select a valid initial position: sc, bcc, fcc."
         end if
     
@@ -38,27 +38,33 @@ module initialization
     end subroutine getInitialParams
 
 
-    subroutine changeIUnits(lj_epsilon,lj_sigma,mass,density,dt)
+    subroutine changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
         ! Changes user Input units to reduced units.
         !
         ! Args:
-        !   lj_epsilon  (REAL64) : Lennard Jones epsilon parameter for the gas (in kJ/mol)
-        !   lj_sigma    (REAL64) : Lennard Jones sigma parameter for the gas (in Ang)
-        !   mass        (REAL64) : Molar Mass of the gas (g/mol)
+        !   lj_epsilon  (REAL64) : Lennard Jones epsilon parameter for the gas (in kJ/mol).
+        !   lj_sigma    (REAL64) : Lennard Jones sigma parameter for the gas (in Ang).
+        !   mass        (REAL64) : Molar Mass of the gas (g/mol).
         !
         ! Inout:
-        !   density     (REAL64) : Density of the system (in g/mL)
-        !   dt          (REAL64) :  Time-step of the simulation (in ps)
+        !   density     (REAL64) : Density of the system (in g/mL).
+        !   dt          (REAL64) :  Time-step of the simulation (in ps).
+        !   T           (REAL64) : Temperature (in K).
 
         double precision, intent(in) :: lj_epsilon,lj_sigma,mass
-        double precision, intent(inout) :: density,dt
-        double precision :: ru_time,ru_dens
+        double precision, intent(inout) :: density,dt,T
+        double precision :: ru_time,ru_dens,ru_temp
         double precision, parameter :: Na = 6.0221408d23
+        double precision, parameter :: kb = 1.380649d-23
+
 
         ! Conversion factors between reduced and real units
-        ru_time = sqrt(mass*(lj_sigma*1d-10)**2_i64 / (lj_epsilon*1d6))*1d12    ! t in picoseconds
+        ru_time = sqrt(mass*(lj_sigma*1d-10)**2_i64 / (lj_epsilon*1d6))*1d12    ! time in picoseconds
         ru_dens = 1d24 * mass / (Na*lj_sigma**3_i64)                            ! density in g/mL
+        ru_temp = 1d3*lj_epsilon/(kb*Na)                                        ! temperature in K
 
+
+        T = T / ru_temp
         density = density / ru_dens
         dt = dt / ru_time
 

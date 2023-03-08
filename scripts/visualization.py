@@ -2,7 +2,7 @@
 Script for plotting the results of the output data from the MD runs.
 Plots Energies, Temperature, Pressure, MSD and RDF.
 
-Use: $ python3 visualization.py path start finish
+Use: $ python3 visualization.py -p path -s start -f final
 although if any arguments is not present chooses from the default 
 path, start,finish = ./plots/, 0,-1 
 
@@ -10,44 +10,12 @@ Diego Ontiveros
 """
 
 import os
-import sys
 import time as cpu_time
+from argparse import ArgumentParser, Namespace
 
 import numpy as np
 import matplotlib.pyplot as plt
 to = cpu_time.time()
-
-
-def parseUserArguments(arguments):
-    """Parses the user input for the script."""
-
-    path = "./plots/"
-    start,finish = None,None
-
-    for i,arg in enumerate(arguments):
-        try: arguments[i] = int(arg)
-        except ValueError: pass
-
-    # When no inputs are given, stay with default
-    if len(arguments) == 0: pass
-
-    # When 1 argument is given see if its the path or start
-    elif len(arguments) == 1:
-        try: start = int(arguments[0])
-        except ValueError: path = arguments[0]
-
-    # When 2 arguments are given see if they are path+s or s+f
-    elif len(arguments) == 2:
-        if isinstance(arguments[0],str): path,start = arguments
-        elif isinstance(arguments[1],str): start,path = arguments
-        else: start,finish = arguments
-
-    # When 3 arguments are given see where the path is
-    elif len(arguments) == 3:
-        if isinstance(arguments[0],str): path,start,finish = arguments
-        elif isinstance(arguments[0],int): start, finish, path = arguments
-    
-    return path,start,finish
 
 
 def makePlot(t,lines:list[np.ndarray],colours:list[str],labels:list[str],file_name:str,start=None,finish=None,save=True,**kwargs):
@@ -92,13 +60,22 @@ def makePlot(t,lines:list[np.ndarray],colours:list[str],labels:list[str],file_na
 ############################### MAIN PROGRAM ###############################
 
 if __name__ == "__main__":
+    print()
 
     # User input management
-    arguments = sys.argv[1:]
-    path,start,finish = parseUserArguments(arguments)
+    parser = ArgumentParser(description="Script for plotting the results of the output data from the MD runs.\n \
+    Plots Energies, Temperature, Pressure, MSD and RDF.")
+    parser.add_argument("-p","--path",help="Output path (str). Folder name where the plots/output will be created. Defaults to './plots/'.",default="./plots/", type=str)
+    parser.add_argument("-s","--start",help="Start frame (int). Frame from which the output data is considered. Defaults to the first frame.",default=None, type=int)
+    parser.add_argument("-f","--final",help="Final frame (int). Frame up to which the output data is considered. Defaults to the last frame.",default=None, type=int)
+    parser.add_argument("-t","--trajectory",help="If added, a trajectory.gif file is created.", action="store_true")
+
+    args: Namespace = parser.parse_args()
+    path,start,finish,make_trajectory = args.path,args.start,args.final,args.trajectory
+
     try: os.mkdir(path)
     except FileExistsError: pass
-    print("\nMaking Plots...")
+    print("Making Plots...")
     
     # Loading data from files
     dataT = np.loadtxt("output.dat",skiprows=0)     			# Thermodynamic data
