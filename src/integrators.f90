@@ -5,7 +5,8 @@ module integrators
     use simulation, only: MSD
 
     implicit none
-    public :: verlet, vel_verlet,andersen_thermostat
+    public :: verlet, vel_verlet,vel_andersen
+    private :: boxmuller
 
 contains
 
@@ -120,34 +121,40 @@ contains
         close(2)
     end subroutine
 
-    ! Declare the subroutine that implements the Andersen thermostat
-    subroutine andersen_thermostat(natoms, temperature, velocities, dt, collision_freq, random_number_seed)
-        implicit none
-        integer(kind=i64), intent(in) :: natoms, random_number_seed
-        real(kind=dp), intent(in) :: temperature, dt, collision_freq
-        real(kind=dp), intent(inout), dimension(:,:) :: velocities
-        real(kind=dp) :: random_number
-        integer(kind=i64) :: i, j
+    subroutine BoxMuller(sgm, x1, x2, xout)
+    implicit none
+    ! generates a random number that follows a normal distribution
+        real(kind=dp), intent(in) :: sgm, x1, x2
+        real(kind=dp), intent(out) :: xout
+        real(kind=dp) :: pi
+        pi = 4d0*datan(1d0)
 
-        real(kind=dp), parameter :: v_max = 4.0_dp * sqrt(temperature) ! Maximum velocity deviation
-        integer(kind=i64) :: ncollisions = 0 ! Counter for the number of collisions
+        xout=sgm*dsqrt(-2d0*(dlog(1d0-x1)))*dcos(2d0*pi*x2)
+    end subroutine BoxMuller
 
-        ! Initialize the random number generator
-        call srand(random_number_seed)
-        ! Loop over all particles in the system
-        do j = 1, natoms
-            ! Generate a random number between 0 and 1
-            random_number = rand()
-            ! Check if the particle should undergo a collision
-            if (random_number < collision_freq * dt) then
-                ! Increment the collision counter
-                ncollisions = ncollisions + 1
-                ! Generate a random velocity for the particle
-                do i = 1, 3
-                    velocities(i,j) = v_max * (2.0_dp * rand() - 1.0_dp)
-                end do
-            end if
-        end do
-    end subroutine andersen_thermostat
+    subroutine vel_Andersen(vel,nu,temp)
+    implicit none
+    ! Andersen thermostat, changes the velocities in a system with a certain probability that depends on the temperature
+        real(kind=dp), intent(in) :: nu,temp
+        real(kind=dp), dimension(n,3), intent(inout) :: vel
+        real(kind=dp) :: sig, nurand, x1, x2
+        integer(kind=i64) :: i,k, seed = 165432156
+
+        sig = dsqrt(temp) !temperature t is a parameter defined in parameters.f90
+        call srand(seed)
+        do i=1,n
+        ! a random number is generated for every particle,
+        ! only if this number < nu, the particle's velocity is changed
+            nurand = rand()
+            if (nurand < nu) then
+                do k=1,3
+                    x1 = rand()
+                    x2 = rand()
+
+                    call boxmuller(sig, x1, x2, vel(i,k))
+                enddo
+            endif
+        enddo
+    end subroutine
 
 end module integrators
