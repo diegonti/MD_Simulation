@@ -42,6 +42,7 @@ program main
     ! Trimming character variables in order to avoid blank spaces
     sim_name = trim(sim_name)
 
+
     write(output_unit, '(A)') 'Successfully loaded parameter file, starting simulation'
 
     ! ~ Memmory allocation ~
@@ -63,11 +64,11 @@ program main
     ! ~ Initialization of the system ~
     call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
     call getInitialParams(trim(cell_type),N,density,M,L,a)
-    call initializePositions(M,a,r,trim(cell_type=))
-    call initializeVelocities(T,v,trim(init_vel))
+    call initializePositions(M,a,r,trim(cell_type))
+    call initializeVelocities(T,v,init_vel)
 
     ! ~ Starting the trajectory of the system ~
-    
+
 
 
     ! ~ Closing files ~
