@@ -294,7 +294,7 @@ contains
                     call random_number(x1)
                     call random_number(x2)
 
-                    call boxmuller(sig, x1, x2, vel(i,k))
+                    call boxmuller(sig, x1, x2, vel(k,i))
                 enddo
             endif
         enddo
