@@ -4,16 +4,16 @@ Uses the Block Average method to compute the average <x> and the std \sigma.
 The STD vs. block size is fitted to a exponential function f(x) = a-b*exp(-x/tau).
 Returns an output file with the stats and plots of the statistichal error (STD) vs. the block size.
 
-Use with: $ python3 stats.py path start finish
+Use with: $ python3 stats.py -p path -s start -f finish
 although if any arguments is not present chooses from the default 
 path, start,finish = ./plots/, 0,-1 
 
 Diego Ontiveros
 """
 import os
-import sys
-import time as cpu_time
 import warnings
+import time as cpu_time
+from argparse import ArgumentParser, Namespace
 
 import numpy as np
 import scipy as sp
@@ -24,39 +24,6 @@ warnings.filterwarnings("ignore", category=sp.optimize.OptimizeWarning)
 to = cpu_time.time()
 
 ###################### FUNCTION DEFINITION ######################
-
-
-def parseUserArguments(arguments):
-    """Parses the user input for the script."""
-
-    path = "./plots/"
-    start,finish = None,None
-
-    for i,arg in enumerate(arguments):
-        try: arguments[i] = int(arg)
-        except ValueError: pass
-
-    # When no inputs are given, stay with default
-    if len(arguments) == 0: pass
-
-    # When 1 argument is given see if its the path or start
-    elif len(arguments) == 1:
-        try: start = int(arguments[0])
-        except ValueError: path = arguments[0]
-
-    # When 2 arguments are given see if they are path+s or s+f
-    elif len(arguments) == 2:
-        if isinstance(arguments[0],str): path,start = arguments
-        elif isinstance(arguments[1],str): start,path = arguments
-        else: start,finish = arguments
-
-    # When 3 arguments are given see where the path is
-    elif len(arguments) == 3:
-        if isinstance(arguments[0],str): path,start,finish = arguments
-        elif isinstance(arguments[0],int): start, finish, path = arguments
-    
-    return path,start,finish
-
 
 def blockAverage(data, maxBlockSize=None):
 	"""Computes the block average of a timeseries "x", and 
@@ -176,13 +143,24 @@ def title(text,before=15,after=15,separator="-",head=2,tail=1):
 ###################### MAIN PROGRAM ######################
 
 if __name__=="__main__":
+	print()
 
 	# User input management
-	arguments = sys.argv[1:]
-	path,start,finish = parseUserArguments(arguments)
+	parser = ArgumentParser(description="Script to compute the statistics (mean, std and autocorrelation time) of the raw results of the simulation.\
+	Uses the Block Average method to compute the average <x> and the std \sigma. \
+	The STD vs. block size is fitted to a exponential function f(x) = a-b*exp(-x/tau).\
+	Returns an output file with the stats and plots of the statistichal error (STD) vs. the block size.")
+	parser.add_argument("-p","--path",help="Output path (str). Folder name where the plots/output will be created. Defaults to './plots/'.",default="./plots/", type=str)
+	parser.add_argument("-s","--start",help="Start frame (int). Frame from which the output data is considered. Defaults to the first frame.",default=None, type=int)
+	parser.add_argument("-f","--final",help="Final frame (int). Frame up to which the output data is considered. Defaults to the last frame.",default=None, type=int)
+
+	args: Namespace = parser.parse_args()
+	path,start,finish = args.path,args.start,args.final
+	if not path.endswith("/"): path += "/"
+
 	try: os.mkdir(path)
 	except FileExistsError: pass
-
+	
 	# Loading data from test files
 	dataT = np.loadtxt("output.dat",skiprows=0)     			# Thermodynamic data
 	data = dataT.T                          					# Each parameter in a column

@@ -2,7 +2,7 @@
 Script for plotting the results of the output data from the MD runs.
 Plots Energies, Temperature, Pressure, MSD and RDF.
 
-Use: $ python3 visualization.py path start finish
+Use: $ python3 visualization.py -p path -s start -f final
 although if any arguments is not present chooses from the default 
 path, start,finish = ./plots/, 0,-1 
 
