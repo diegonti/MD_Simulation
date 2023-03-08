@@ -5,11 +5,20 @@
 
 - [Installing](#installing)
 - [Task Distribution](#task-distribution)
+- [Usage](#usage)
 - [Contributors](#contributors)
 
 ## Installing
 
 This project is designed to be compiled on Unix-type machines (Linux/macOS). The autorhs do not guarantee its correct compilation on Windows machines.
+
+Before starting the compilation, make sure to be using the gfortran compiler, at least version `11.3.0` or greater. Other compilers have not been tested.
+
+Once meeting the requirements, `git clone` this repository, and, inside the repo folder, just do `make`. A Makefile script will be interpreted by make, and will compile all the source files.
+
+## Usage
+
+In order to use the simulator, a parameter file must be supplied as a first argument list, such as `./MDEMI.x parameters.nml`. An example of parameter input file can be found at [here](./parameters.nml).
 
 ## Task Distribution
 - Main Program &rarr; Marc Alsina
