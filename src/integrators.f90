@@ -69,8 +69,70 @@ contains
         deallocate(rnew)
 
 
-
     end subroutine mainLoop
+
+
+    subroutine verlet_step(r_new, r, r_old, v, F, dt, a_box, cutoff)
+        implicit none
+        ! In/Out variables
+        real(kind=dp), dimension(:,:), intent(inout) :: r_old, v, F
+        real(kind=dp), dimension(:,:), intent(inout) :: r
+        real(kind=dp), dimension(:,:), intent(out)   :: r_new
+        real(kind=dp), intent(in)                    :: dt, a_box, cutoff
+        ! Internal variables
+        
+        ! Computing F(t)
+        call calc_vdw_force(r, cutoff, a_box, F)
+        
+        ! Setting r(t+dt)
+        r_new = (2.0_dp * r) - r_old + (F * dt * dt)
+
+        ! Appplying periodic boundary conditions
+        call PBC(r_new, a_box)
+
+        ! Computing velocities
+        v = (r_new - r_old) / (2.0_dp * dt)
+
+        ! Setting r(t-dt) -> r(t)
+        r_old(:, :) = r(:, :)
+
+    end subroutine verlet_step
+
+    
+    subroutine vv_integrator(positions, velocities, cutoff, L, dt)
+        !
+        !  Subroutine to update the positions of all particles using the Velocity Verlet
+        ! algorithm. 
+
+        ! Args:
+        !    positions  (REAL64[3,N]) : positions of all N particles, in reduced units.
+        !    velocities (REAL64[3,N]) : velocities of all N partciles, in reduced units.
+        !    cutoff          (REAL64) : cutoff value of the interaction.
+        !    L               (REAL64) : length of the sides of the box.
+        !    dt              (REAL64) : value of the integration timestep.
+        
+        ! Returns:
+        !    positions  (REAL64[3,N]) : positions of all N particles, in reduced units.
+        !    velocities (REAL64[3,N]) : velocities of all N partciles, in reduced units.
+        !
+
+        double precision, dimension(:,:), intent(inout)      :: positions, velocities
+        double precision, intent(in)                         :: cutoff, L, dt
+        ! local variables
+        integer(kind=i64)                                    :: i, j
+        double precision, dimension(3, size(positions(1,:))) :: forces
+
+        call calc_vdw_force(positions, cutoff, L, forces)
+        
+        positions = positions + dt*velocities + 0.5d0*dt*dt*forces
+        call PBC(positions, L)
+
+        velocities = velocities + 0.5d0*dt*forces
+
+        call calc_vdw_force(positions, cutoff, L, forces)
+        velocities = velocities + 0.5d0*dt*forces
+
+    end subroutine vv_integrator
 
     subroutine verlet(positions,velocities,dt,nts,cutoff,a_box,temp)
         implicit none
