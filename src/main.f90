@@ -4,6 +4,7 @@ program main
     use            :: initialization, only: changeIUnits, getInitialParams, initializePositions, initializeVelocities
     use            :: testing
     use            :: readers_m,      only: read_nml
+    use            :: integrators,    only: mainLoop
     use            :: writers_m,      only: writePositions
     implicit none
 
@@ -14,12 +15,12 @@ program main
     ! Scalar variables
     integer(kind=i32) :: status_cli
     integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, write_frame, &
-    log_unit, traj_unit
+    log_unit, traj_unit, rdf_unit
     real(kind=dp)     :: init_time, end_time, density, L, a, T, lj_epsilon, lj_sigma, mass, dt, &
     andersen_nu
 
     ! String variables
-    character(len=2048) :: nml_path, sim_name, log_name, traj_name
+    character(len=2048) :: nml_path, sim_name, log_name, traj_name, rdf_name
     character(len=2048) :: cell_type, init_vel
 
 
@@ -53,6 +54,8 @@ program main
     ! Opening files
     ! log_unit  -> file where the simulation time, energy, instant temperature, etc.. will be placed
     ! traj_name -> trajectory file, where the xyz of each snapshot is placed 
+    ! rdf_name -> RDF file, where the RDF will be weitten 
+
 
     log_name = trim(sim_name) // "_logfile.log"
     open(newunit=log_unit, file=trim(log_name), access='sequential', action='write', &
@@ -62,6 +65,10 @@ program main
     open(newunit=traj_unit, file=trim(traj_name), access='sequential', action='write', &
     status='replace', form='formatted')
 
+    rdf_name = trim(sim_name) // "_rdf.log"
+    open(newunit=rdf_unit, file=trim(rdf_name), access='sequential', action='write', &
+    status='replace', form='formatted')
+
     ! ~ Initialization of the system ~
     call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
     call getInitialParams(trim(cell_type),N,density,M,L,a)
@@ -69,7 +76,8 @@ program main
     call initializeVelocities(T,v,init_vel)
 
     ! ~ Starting the trajectory of the system ~
-    
+    call mainLoop(log_unit, traj_unit, rdf_unit, lj_epsilon, lj_sigma, mass, &
+    n_steps, dt, a, T, andersen_nu, 0.5_dp*a, gdr_num_bins, r, v)    
     ! call testMatrix(r)
     ! open(19,file="test.xyz",status="replace")
     ! call writePositions(r,19_i64)

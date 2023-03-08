@@ -222,4 +222,53 @@ contains
         end do
     end subroutine calc_vdw_force
 
+    pure subroutine compute_com_momenta(vel, com_momenta)
+        implicit none
+        ! Author: Marc Alsina <marcalsinac@gmail.com>
+        ! Subroutine to compute the center of mass momenta, in reduced units
+        !
+        ! Args:
+        !   vel         (REAL64[3,N]): Velocity of the system, in reduced units
+        !
+        ! Returns:
+        !   com_momenta (REAL64[3]): Center of mass momenta, in reduced units
+
+        
+        ! In/Out variables
+        real(kind=DP), dimension(:, :), intent(in) :: vel
+        real(kind=DP), dimension(3), intent(out)   :: com_momenta
+        ! Internal variables
+        integer(kind=I64)                          :: i_aux, n_p
+
+        com_momenta = 0.0_DP
+        n_p = size(vel, dim=2, kind=I64)
+
+        do i_aux = 1, n_p
+            com_momenta(:) = com_momenta(:) + vel(:, i_aux)
+        end do
+
+    end subroutine compute_com_momenta
+
+    pure function calc_Tinst(ke, np) result(tinst)
+    implicit none
+    ! Author: Marc Alsina <marcalsinac@gmail.com>
+    ! Subroutine to compute the instantaneous temperature
+    !
+    ! Args:
+    !   ke (REAL64): instant kinetic energy
+    !   np (INT64) : Number of particles in the system
+    !
+    ! Returns:
+    !   tinst (REAL64): Instant temperature
+
+    
+    ! In/Out variables
+    real(kind=dp), intent(in)     :: ke
+    integer(kind=i64), intent(in) :: np
+    real(kind=dp)                 :: tinst
+
+    tinst = (2.0_DP / (3.0_DP * real(np, kind=dp))) * ke
+
+    end function calc_Tinst
+
 end module potential_m

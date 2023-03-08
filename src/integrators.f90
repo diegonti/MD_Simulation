@@ -1,14 +1,141 @@
 module integrators
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
     use periodic_bc, only: PBC
-    use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc
-    use simulation, only: MSD
+    use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst, compute_com_momenta
+    use simulation,  only: MSD, RDF
+    use writers_m,   only: writePositions, writeRdf, writeSystem
 
     implicit none
     public :: verlet, vel_verlet,vel_andersen
     private :: boxmuller
 
 contains
+
+    subroutine mainLoop(log_unit,traj_unit,rdf_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,gdr_num_bins,r,v)
+        ! Main Simulation Loop
+        !
+
+        implicit none
+        integer(kind=i64), intent(in) :: log_unit,traj_unit,rdf_unit, N_steps, gdr_num_bins
+        real(kind=dp), intent(in) :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt
+        real(kind=dp), dimension(:,:), intent(inout) :: r,v
+
+        real(kind=dp), dimension(:,:), allocatable :: r0, rold, rnew, F
+        real(kind=dp) :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t, dr
+        real(kind=dp), dimension(3) :: p_com
+        real(kind=dp), dimension(gdr_num_bins) :: gdr
+        integer(kind=i64) :: i,N
+
+        dr = 1.5d0*L/dble(gdr_num_bins)
+        N = size(r,dim=2,kind=i64)
+
+        allocate(r0(3,N))
+        allocate(rold(3,N))
+        allocate(rnew(3,N))
+        allocate(F(3,N))
+
+
+        F = 0.0_dp
+        rold = r
+        r0 = r  ! Saving initial configuration (for MSD)
+
+        do i=1,N_steps
+            time = real(i, kind=dp)*dt
+            !choose integrator depending on user?
+            ! call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
+            ! call vv_integrator(r, v, cutoff, L, dt)
+            ! call euler()
+            Epot = calc_vdw_pbc(r,cutoff,L)
+            Ekin = calc_KE(v)
+            Etot = Epot + Ekin
+            Tinst =  calc_Tinst(Ekin,N)
+            press =  calc_pressure(L, r, Tinst, cutoff)
+            call compute_com_momenta(v,p_com)
+            p_com_t = dsqrt(dot_product(p_com,p_com))
+
+            rMSD = MSD(r,r0)
+            call RDF(r,gdr,L,dr)
+
+            call vel_Andersen(v,nu,T)
+            r = rnew
+
+            call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,T,press,rMSD,p_com_t)
+            call writePositions(r, traj_unit)
+
+        end do
+
+        call writeRDF(dr,gdr,rdf_unit)
+
+        deallocate(r0)
+        deallocate(rold)
+        deallocate(rnew)
+
+
+    end subroutine mainLoop
+
+
+    subroutine verlet_step(r_new, r, r_old, v, F, dt, a_box, cutoff)
+        implicit none
+        ! In/Out variables
+        real(kind=dp), dimension(:,:), intent(inout) :: r_old, v, F
+        real(kind=dp), dimension(:,:), intent(inout) :: r
+        real(kind=dp), dimension(:,:), intent(out)   :: r_new
+        real(kind=dp), intent(in)                    :: dt, a_box, cutoff
+        ! Internal variables
+        
+        ! Computing F(t)
+        call calc_vdw_force(r, cutoff, a_box, F)
+        
+        ! Setting r(t+dt)
+        r_new = (2.0_dp * r) - r_old + (F * dt * dt)
+
+        ! Appplying periodic boundary conditions
+        call PBC(r_new, a_box)
+
+        ! Computing velocities
+        v = (r_new - r_old) / (2.0_dp * dt)
+
+        ! Setting r(t-dt) -> r(t)
+        r_old(:, :) = r(:, :)
+
+    end subroutine verlet_step
+
+
+    subroutine vv_integrator(positions, velocities, cutoff, L, dt)
+        !
+        !  Subroutine to update the positions of all particles using the Velocity Verlet
+        ! algorithm. 
+
+        ! Args:
+        !    positions  (REAL64[3,N]) : positions of all N particles, in reduced units.
+        !    velocities (REAL64[3,N]) : velocities of all N partciles, in reduced units.
+        !    cutoff          (REAL64) : cutoff value of the interaction.
+        !    L               (REAL64) : length of the sides of the box.
+        !    dt              (REAL64) : value of the integration timestep.
+        
+        ! Returns:
+        !    positions  (REAL64[3,N]) : positions of all N particles, in reduced units.
+        !    velocities (REAL64[3,N]) : velocities of all N partciles, in reduced units.
+        !
+
+        double precision, dimension(:,:), intent(inout)      :: positions, velocities
+        double precision, intent(in)                         :: cutoff, L, dt
+        ! local variables
+        double precision, dimension(3, size(positions(1,:))) :: forces
+
+        call calc_vdw_force(positions, cutoff, L, forces)
+        
+        positions = positions + dt*velocities + 0.5d0*dt*dt*forces
+        call PBC(positions, L)
+
+        velocities = velocities + 0.5d0*dt*forces
+
+        call calc_vdw_force(positions, cutoff, L, forces)
+        velocities = velocities + 0.5d0*dt*forces
+
+    end subroutine vv_integrator
+
+
 
     subroutine verlet(positions,velocities,dt,nts,cutoff,a_box,temp)
         implicit none
@@ -120,6 +247,7 @@ contains
         !close(1)
         close(2)
     end subroutine
+
 
     subroutine BoxMuller(sgm, x1, x2, xout)
     implicit none

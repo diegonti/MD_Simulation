@@ -15,7 +15,7 @@ COMP_R_FLAGS=#-O3 -funroll-loops -ftree-vectorize -finline-functions -flto=2 -fw
 
 # ~ LINKING ~
 all: MDEMI.x
-MDEMI.x:  simulation.o integrators.o potentials_module.o pbc.o readers_mod.o writers_mod.o testing.o initialization.o main.o
+MDEMI.x:  pbc.o potentials_module.o simulation.o writers_mod.o integrators.o readers_mod.o testing.o initialization.o main.o
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) $^ -o $@
 
 
@@ -38,13 +38,13 @@ writers_mod.o: writers_mod.f90
 pbc.o: pbc.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
-potentials_module.o: potentials_module.f90 pbc.o
+potentials_module.o: potentials_module.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
-simulation.o: simulation.f90 pbc.o
+simulation.o: simulation.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
-integrators.o: integrators.f90 pbc.o potentials_module.o simulation.o
+integrators.o: integrators.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
 

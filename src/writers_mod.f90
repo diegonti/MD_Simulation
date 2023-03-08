@@ -47,7 +47,8 @@ module writers_m
         momentum_out = momentum * ru_mom
 
         ! Writes to output file (coumun style)
-        write(unit,*) time_out,E_out,Epot_out,Ekin_out,T_out,press_out,MSD_out,momentum_out
+        write(unit,'(ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4)') time_out,&
+        E_out,Epot_out,Ekin_out,T_out,press_out,MSD_out,momentum_out
 
     end subroutine writeSystem
 
@@ -66,13 +67,36 @@ module writers_m
 
         N = size(r, dim=2,kind=i64)
 
-        write(unit,*) N
-        write(unit,*)
+        write(unit, '(I3)') N
+        write(unit,'(A)') ''
         do i= 1,N
-            write(unit,*) "A", r(:,i)
+            write(unit,'(A,F20.8,F20.8,F20.8)') "A", r(1,i), r(2,i), r(3,i)
         end do
 
     end subroutine writePositions
+
+    subroutine writeRdf(dr,rdf,unit)
+        ! Writes positions and rdf in 2 columns.
+        !
+        ! Args:
+        !   dr                    : step dr
+        !   rdf                   : radial distribution function values at 0, dr, 2dr,...
+        !   unit    (INT64)       : File unit to write on.
+        implicit none
+        double precision, intent(in), dimension(:) :: rdf
+        double precision, intent(in) :: dr
+        double precision :: ri = 0.d0
+        integer(kind=i64), intent(in) :: unit
+        integer(kind=i64) :: i, N
+
+        N = size(rdf,kind=i64)
+
+        do i= 1,N
+            write(unit,*) ri, rdf(i)
+            ri=ri+dr
+        end do
+
+    end subroutine writeRdf
 
 
 end module writers_m
