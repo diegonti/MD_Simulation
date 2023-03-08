@@ -4,6 +4,7 @@ program main
     use            :: initialization, only: changeIUnits, getInitialParams, initializePositions, initializeVelocities
     use            :: testing
     use            :: readers_m,      only: read_nml
+    use            :: writers_m,      only: writePositions
     implicit none
 
     ! ~ Memory definition ~
@@ -68,8 +69,10 @@ program main
     call initializeVelocities(T,v,init_vel)
 
     ! ~ Starting the trajectory of the system ~
-
-
+    
+    ! call testMatrix(r)
+    ! open(19,file="test.xyz",status="replace")
+    ! call writePositions(r,19_i64)
 
     ! ~ Closing files ~
     close(log_unit)
