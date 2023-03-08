@@ -2,8 +2,8 @@ module integrators
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
     use periodic_bc, only: PBC
     use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst, compute_com_momenta
-    use simulation, only: MSD
-    ! use writers_m, only: 
+    use simulation,  only: MSD, RDF
+    use writers_m,   only: writePositions, writeRdf, writeSystem
 
     implicit none
     public :: verlet, vel_verlet,vel_andersen
@@ -11,16 +11,16 @@ module integrators
 
 contains
 
-    subroutine mainLoop(log_unit,traj_unit,rdf_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,gdr_num_bins,r,v,F)
+    subroutine mainLoop(log_unit,traj_unit,rdf_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,gdr_num_bins,r,v)
         ! Main Simulation Loop
         !
 
         implicit none
         integer(kind=i64), intent(in) :: log_unit,traj_unit,rdf_unit, N_steps, gdr_num_bins
         real(kind=dp), intent(in) :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt
-        real(kind=dp), dimension(:,:), intent(inout) :: r,v,F
+        real(kind=dp), dimension(:,:), intent(inout) :: r,v
 
-        real(kind=dp), dimension(:,:), allocatable :: r0, rold, rnew
+        real(kind=dp), dimension(:,:), allocatable :: r0, rold, rnew, F
         real(kind=dp) :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t, dr
         real(kind=dp), dimension(3) :: p_com
         real(kind=dp), dimension(gdr_num_bins) :: gdr
@@ -32,13 +32,15 @@ contains
         allocate(r0(3,N))
         allocate(rold(3,N))
         allocate(rnew(3,N))
+        allocate(F(3,N))
 
 
+        F = 0.0_dp
         rold = r
         r0 = r  ! Saving initial configuration (for MSD)
 
         do i=1,N_steps
-            time = i*dt
+            time = real(i, kind=dp)*dt
             !choose integrator depending on user?
             ! call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
             ! call vv_integrator(r, v, cutoff, L, dt)
@@ -58,7 +60,7 @@ contains
             r = rnew
 
             call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,T,press,rMSD,p_com_t)
-            call writePositions(traj_unit,r)
+            call writePositions(r, traj_unit)
 
         end do
 
