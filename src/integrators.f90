@@ -1,14 +1,76 @@
 module integrators
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
     use periodic_bc, only: PBC
-    use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc
+    use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst, compute_com_momenta
     use simulation, only: MSD
+    ! use writers_m, only: 
 
     implicit none
     public :: verlet, vel_verlet,vel_andersen
     private :: boxmuller
 
 contains
+
+    subroutine mainLoop(log_unit,traj_unit,rdf_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,gdr_num_bins,r,v,F)
+        ! Main Simulation Loop
+        !
+
+        implicit none
+        integer(kind=i64), intent(in) :: log_unit,traj_unit,rdf_unit, N_steps, gdr_num_bins
+        real(kind=dp), intent(in) :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt
+        real(kind=dp), dimension(:,:), intent(inout) :: r,v,F
+
+        real(kind=dp), dimension(:,:), allocatable :: r0, rold, rnew
+        real(kind=dp) :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t, dr
+        real(kind=dp), dimension(3) :: p_com
+        real(kind=dp), dimension(gdr_num_bins) :: gdr
+        integer(kind=i64) :: i,N
+
+        dr = 1.5d0*L/dble(gdr_num_bins)
+        N = size(r,dim=2,kind=i64)
+
+        allocate(r0(3,N))
+        allocate(rold(3,N))
+        allocate(rnew(3,N))
+
+
+        rold = r
+        r0 = r  ! Saving initial configuration (for MSD)
+
+        do i=1,N_steps
+            time = i*dt
+            !choose integrator depending on user?
+            ! call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
+            ! call vv_integrator(r, v, cutoff, L, dt)
+            ! call euler()
+            Epot = calc_vdw_pbc(r,cutoff,L)
+            Ekin = calc_KE(v)
+            Etot = Epot + Ekin
+            Tinst =  calc_Tinst(Ekin,N)
+            press =  calc_pressure(L, r, Tinst, cutoff)
+            call compute_com_momenta(v,p_com)
+            p_com_t = dsqrt(dot_product(p_com,p_com))
+
+            rMSD = MSD(r,r0)
+            call RDF(r,gdr,L,dr)
+
+            call vel_Andersen(v,nu,T)
+            r = rnew
+
+            call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,T,press,rMSD,p_com_t)
+            call writePositions(traj_unit,r)
+
+        end do
+
+        call writeRDF(dr,gdr,rdf_unit)
+
+        deallocate(r0)
+        deallocate(rold)
+        deallocate(rnew)
+
+
+
+    end subroutine mainLoop
 
     subroutine verlet(positions,velocities,dt,nts,cutoff,a_box,temp)
         implicit none
