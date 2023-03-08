@@ -47,7 +47,8 @@ module writers_m
         momentum_out = momentum * ru_mom
 
         ! Writes to output file (coumun style)
-        write(unit,*) time_out,E_out,Epot_out,Ekin_out,T_out,press_out,MSD_out,momentum_out
+        write(unit,'(ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4)') time_out,&
+        E_out,Epot_out,Ekin_out,T_out,press_out,MSD_out,momentum_out
 
     end subroutine writeSystem
 
@@ -66,10 +67,10 @@ module writers_m
 
         N = size(r, dim=2,kind=i64)
 
-        write(unit,*) N
-        write(unit,*)
+        write(unit, '(I3)') N
+        write(unit,'(A)') ''
         do i= 1,N
-            write(unit,*) "A", r(:,i)
+            write(unit,'(A,F20.8,F20.8,F20.8)') "A", r(1,i), r(2,i), r(3,i)
         end do
 
     end subroutine writePositions
