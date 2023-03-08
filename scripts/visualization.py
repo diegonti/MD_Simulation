@@ -10,7 +10,6 @@ Diego Ontiveros
 """
 
 import os
-import sys
 import time as cpu_time
 from argparse import ArgumentParser, Namespace
 
