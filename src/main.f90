@@ -18,9 +18,9 @@ program main
     andersen_nu
 
     ! String variables
-    character(len=2048)           :: nml_path, sim_name, log_name, traj_name
-    character(len=:), allocatable :: cell_type
-    character(len=:), allocatable :: init_vel
+    character(len=2048) :: nml_path, sim_name, log_name, traj_name
+    character(len=2048) :: cell_type
+    character(len=2048) :: init_vel
 
 
     !!! ~ MAIN PROGRAM ~ !!!
@@ -42,8 +42,7 @@ program main
 
     ! Trimming character variables in order to avoid blank spaces
     sim_name = trim(sim_name)
-    cell_type = trim(cell_type)
-    init_vel = trim(init_vel)
+
 
     write(output_unit, '(A)') 'Successfully loaded parameter file, starting simulation'
 
@@ -65,12 +64,12 @@ program main
 
     ! ~ Initialization of the system ~
     call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
-    call getInitialParams(cell_type,N,density,M,L,a)
-    call initializePositions(M,a,r,cell_type)
+    call getInitialParams(trim(cell_type),N,density,M,L,a)
+    call initializePositions(M,a,r,trim(cell_type))
     call initializeVelocities(T,v,init_vel)
 
     ! ~ Starting the trajectory of the system ~
-    
+
 
 
     ! ~ Closing files ~

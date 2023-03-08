@@ -1,7 +1,7 @@
 module integrators
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
-    use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc
     use periodic_bc, only: PBC
+    use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc
     use simulation, only: MSD
 
     implicit none
@@ -139,19 +139,29 @@ contains
         real(kind=dp), dimension(:,:), intent(inout) :: vel
         real(kind=dp) :: sig, nurand, x1, x2
         integer(kind=i64) :: i,k,N
-        integer, parameter:: seed = 165432156
+        integer :: state_size
+        integer, allocatable, dimension(:) :: state
+        integer, parameter:: seed_number = 165432156
 
         N = size(vel,dim=2,kind=i64)
         sig = dsqrt(temp) !temperature t is a parameter defined in parameters.f90
-        call srand(seed)
+        call random_seed( size=state_size )
+   
+        allocate(state(state_size))
+     
+        ! -- Simple method of initializing seed from single scalar
+        state = seed_number
+        call random_seed( put=state )
+        
         do i=1,N
         ! a random number is generated for every particle,
         ! only if this number < nu, the particle's velocity is changed
-            nurand = 1
+
+            call random_number(nurand)
             if (nurand < nu) then
                 do k=1,3
-                    x1 = 1
-                    x2 = 1
+                    call random_number(x1)
+                    call random_number(x2)
 
                     call boxmuller(sig, x1, x2, vel(i,k))
                 enddo

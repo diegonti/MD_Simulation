@@ -20,7 +20,7 @@ MDEMI.x:  simulation.o integrators.o potentials_module.o pbc.o readers_mod.o wri
 
 
 # ~ COMPILING ~
-main.o: main.f90 
+main.o: main.f90 # initialization.o
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
 initialization.o: initialization.f90
@@ -41,10 +41,10 @@ pbc.o: pbc.f90
 potentials_module.o: potentials_module.f90 pbc.o
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
-integrators.o: integrators.f90 pbc.o potentials_module.o
+simulation.o: simulation.f90 pbc.o
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
-simulation.o: simulation.f90 pbc.o
+integrators.o: integrators.f90 pbc.o potentials_module.o simulation.o
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
 
