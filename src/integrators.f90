@@ -145,11 +145,10 @@ contains
 
         N = size(vel,dim=2,kind=i64)
         sig = dsqrt(temp) !temperature t is a parameter defined in parameters.f90
+        
+        ! Setting Random Seed
         call random_seed( size=state_size )
-   
         allocate(state(state_size))
-     
-        ! -- Simple method of initializing seed from single scalar
         state = seed_number
         call random_seed( put=state )
         
