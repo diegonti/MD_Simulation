@@ -98,7 +98,7 @@ contains
 
     end subroutine verlet_step
 
-    
+
     subroutine vv_integrator(positions, velocities, cutoff, L, dt)
         !
         !  Subroutine to update the positions of all particles using the Velocity Verlet
@@ -119,7 +119,6 @@ contains
         double precision, dimension(:,:), intent(inout)      :: positions, velocities
         double precision, intent(in)                         :: cutoff, L, dt
         ! local variables
-        integer(kind=i64)                                    :: i, j
         double precision, dimension(3, size(positions(1,:))) :: forces
 
         call calc_vdw_force(positions, cutoff, L, forces)
@@ -133,6 +132,8 @@ contains
         velocities = velocities + 0.5d0*dt*forces
 
     end subroutine vv_integrator
+
+
 
     subroutine verlet(positions,velocities,dt,nts,cutoff,a_box,temp)
         implicit none
@@ -244,6 +245,7 @@ contains
         !close(1)
         close(2)
     end subroutine
+
 
     subroutine BoxMuller(sgm, x1, x2, xout)
     implicit none
