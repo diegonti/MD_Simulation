@@ -34,7 +34,7 @@ contains
         double precision, dimension(:), intent(inout)        :: distribution
         double precision, intent(in)                         :: L, dr
         ! local variables
-        double precision, dimension(1, size(positions(:,1))) :: r_ij
+        double precision, dimension(size(positions(:,1)), 1) :: r_ij
         double precision, dimension(27)                      :: neighbour_dist
         integer(kind=i64)                                    :: i, j, k, N, M
 
