@@ -18,8 +18,8 @@ program main
     andersen_nu
 
     ! String variables
-    character(len=2048)           :: nml_path, sim_name, log_name, traj_name
-    character(len=2048), allocatable :: cell_type, init_vel
+    character(len=2048) :: nml_path, sim_name, log_name, traj_name
+    character(len=2048) :: cell_type, init_vel
 
 
     !!! ~ MAIN PROGRAM ~ !!!
