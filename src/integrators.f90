@@ -46,7 +46,7 @@ contains
             u_ene = calc_vdw_pbc(positions,cutoff,a_box)
             pres = calc_pressure(a_box, positions, temp, cutoff)
             ms_dist = msd(posold,positions)
-            write(2, '(5(f12.8,1x))') i_ts*dt,kin_ene,u_ene,pres,ms_dist
+            write(2, '(5(f12.8,1x))') dble(i_ts)*dt,kin_ene,u_ene,pres,ms_dist
 
             do j=1,np
                 do i=1,3
@@ -95,7 +95,7 @@ contains
             kin_ene = calc_KE(velocities)
             u_ene = calc_vdw_pbc(positions,cutoff,a_box)
             pres = calc_pressure(a_box, positions, temp, cutoff)
-            write(2, '(4(f12.8,1x))') i_ts*dt,kin_ene,u_ene,pres
+            write(2, '(4(f12.8,1x))') dble(i_ts)*dt,kin_ene,u_ene,pres
 
             do j=1,np
                 do i=1,3
@@ -136,20 +136,22 @@ contains
     implicit none
     ! Andersen thermostat, changes the velocities in a system with a certain probability that depends on the temperature
         real(kind=dp), intent(in) :: nu,temp
-        real(kind=dp), dimension(n,3), intent(inout) :: vel
+        real(kind=dp), dimension(:,:), intent(inout) :: vel
         real(kind=dp) :: sig, nurand, x1, x2
-        integer(kind=i64) :: i,k, seed = 165432156
+        integer(kind=i64) :: i,k,N
+        integer, parameter:: seed = 165432156
 
+        N = size(vel,dim=2,kind=i64)
         sig = dsqrt(temp) !temperature t is a parameter defined in parameters.f90
         call srand(seed)
-        do i=1,n
+        do i=1,N
         ! a random number is generated for every particle,
         ! only if this number < nu, the particle's velocity is changed
-            nurand = rand()
+            nurand = 1
             if (nurand < nu) then
                 do k=1,3
-                    x1 = rand()
-                    x2 = rand()
+                    x1 = 1
+                    x2 = 1
 
                     call boxmuller(sig, x1, x2, vel(i,k))
                 enddo
