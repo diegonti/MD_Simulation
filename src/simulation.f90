@@ -36,19 +36,18 @@ contains
         ! local variables
         double precision, dimension(1, size(positions(:,1))) :: r_ij
         double precision, dimension(27)                      :: neighbour_dist
-        double precision                                     :: dist
         integer(kind=i64)                                    :: i, j, k, N, M
 
-        N = size(positions(1,:))
-        M = size(positions(:,1))
+        N = size(positions(1,:),kind=i64)
+        M = size(positions(:,1),kind=i64)
 
         do i = 1, N
-            do j = i+1, N
+            do j = i+1_i64, N
                 r_ij(:,1) = positions(:,i) - positions(:,j)
                 call PBC(r_ij, L)
                 call neighbour_distances(r_ij(:,1), L, neighbour_dist)
                 do k = 1, 27
-                    if (neighbour_dist(k) <= 1.5*L) then
+                    if (neighbour_dist(k) <= 1.5d0*L) then
                         distribution(int(neighbour_dist(k)/dr) + 1) = &
                         distribution(int(neighbour_dist(k)/dr) + 1) + 1.0d0
                     end if
@@ -80,11 +79,11 @@ contains
         integer(kind=i64)                              :: i, j, k, indx
         double precision, dimension(size(r_ij_vector)) :: r_aux
 
-        do i = -1, 1
-            do j = -1, 1
-                do k = -1, 1
-                    r_aux = r_ij_vector + (/i*L, j*L, k*L/)
-                    indx = 9*(i+1) + 3*(j+1) + k + 2
+        do i = -1_i64, 1_i64
+            do j = -1_i64, 1_i64
+                do k = -1_i64, 1_i64
+                    r_aux = r_ij_vector + (/real(i,kind=dp)*L, real(j,kind=dp)*L, real(k,kind=dp)*L/)
+                    indx = 9_i64*(i+1_i64) + 3_i64*(j+1_i64) + k + 2_i64
                     neighbour_dist(indx) = dsqrt(sum(r_aux * r_aux))
                 end do
             end do
@@ -112,7 +111,7 @@ contains
         ! local variables
         integer(kind=i64)                            :: i, N
 
-        N = size(positions(1,:))
+        N = size(positions(1,:), kind=i64)
 
         MSD = 0.0d0
 
