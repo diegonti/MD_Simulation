@@ -4,6 +4,7 @@ program main
     use            :: initialization, only: changeIUnits, getInitialParams, initializePositions, initializeVelocities
     use            :: testing
     use            :: readers_m,      only: read_nml
+    use            :: integrators,    only: mainLoop
     implicit none
 
     ! ~ Memory definition ~
@@ -74,7 +75,8 @@ program main
     call initializeVelocities(T,v,init_vel)
 
     ! ~ Starting the trajectory of the system ~
-
+    call mainLoop(log_unit, traj_unit, rdf_unit, lj_epsilon, lj_sigma, mass, &
+    n_steps, dt, a, T, andersen_nu, 0.5_dp*a, gdr_num_bins, r, v)
 
 
     ! ~ Closing files ~
