@@ -64,7 +64,7 @@ program main
     status='replace', form='formatted')
 
     ! ~ Initialization of the system ~
-    call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt)
+    call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
     call getInitialParams(cell_type,N,density,M,L,a)
     call initializePositions(M,a,r,cell_type)
     call initializeVelocities(T,v,init_vel)
