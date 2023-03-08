@@ -41,6 +41,8 @@ contains
 
         r = r - (L / 2.0_dp)
 
+        gdr = 0.0d0 ! initialization of the RDF
+
         do i=1,N_steps
             time = real(i, kind=dp)*dt
             !choose integrator depending on user?
