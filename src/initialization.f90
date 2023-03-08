@@ -27,9 +27,9 @@ module initialization
         double precision, intent(out) :: L, a
         
         L = (real(N,kind=dp)/density)**(1.d0/3.d0)
-        if (cell=="sc") then; M = int((real(N,kind=dp))**(1.d0/3.d0),kind=i64)
-        else if (cell=="fcc") then; M = int((real(N,kind=dp)/4.d0)**(1.d0/3.d0), kind=i64)
-        else if (cell=="bcc") then; M = int((real(N,kind=dp)/2.d0)**(1.d0/3.d0), kind=i64)
+        if (cell=="sc") then; M = nint((real(N,kind=dp))**(1.d0/3.d0),kind=i64)
+        else if (cell=="fcc") then; M = nint((real(N,kind=dp)/4.d0)**(1.d0/3.d0), kind=i64)
+        else if (cell=="bcc") then; M = nint((real(N,kind=dp)/2.d0)**(1.d0/3.d0), kind=i64)
         else; print*, "Select a valid initial position: sc, bcc, fcc."
         end if
     
