@@ -85,7 +85,7 @@ program main
     close(traj_unit)
     close(rdf_unit)
 
-    ! ~ Memmory allocation ~
+    ! ~ Memmory deallocation ~
     deallocate(r)
     deallocate(v)
     
