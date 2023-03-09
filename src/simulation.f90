@@ -38,7 +38,7 @@ contains
         double precision, dimension(27)               :: neighbour_dist
         integer(kind=i64)                             :: i, j, k, N
 
-        N = size(positions(1,:),kind=i64)
+        N = size(positions(1,:), kind=i64)
 
         do i = 1, N
             do j = i+1_i64, N
