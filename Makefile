@@ -47,12 +47,19 @@ simulation.o: simulation.f90
 integrators.o: integrators.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
-# make run
 
-# make plots
-# python scripts/stats.py -ip input_path -op output_folder -s start -f finish #(por defecto op = plots/, start=0, finish=-1)
-# python scripts/visualization.py -ip input_path -op output_folder -s start -f finish -t #(por defecto op = plots/, start=0, finish=-1)
+.PHONY: run_serial
+run_serial:
+	./MDEMI.x parameters.nml
 
+
+.PHONY: postprocess stats plots
+postprocess: stats plots
+stats:
+	python3 scripts/stats.py -ip $(input) $(args) #-op output_folder -s start -f finish 
+
+plots:
+	python3 scripts/visualization.py -ip $(input) $(args) #-op output_folder -s start -f finish 
 
 
 # Defined recipies:
@@ -61,7 +68,9 @@ clean:
 	rm -f *.o *.mod
 	rm -f ./src/*.o ./src/*.mod
 
-.PHONY: run_serial
-run_serial:
-	./MDEMI.x
+.PHONY: help
+help:
+	@sed -n "s/^##//p" Makefile
+
+
 
