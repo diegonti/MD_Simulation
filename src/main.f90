@@ -27,6 +27,13 @@ program main
     !!! ~ MAIN PROGRAM ~ !!!
 
     call cpu_time(init_time)
+
+    ! Setting random seed of RNG
+    call random_seed( size=state_size )
+    allocate(state(state_size))
+    state = seed_number
+    call random_seed( put=state )
+
     write(output_unit, '(A)') '~ Welcome to MDEMI!! ~'
     write(output_unit, '(A)') 'Reading input file...'
 
