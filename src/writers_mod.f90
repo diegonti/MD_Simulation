@@ -79,9 +79,9 @@ module writers_m
         ! Writes positions and rdf in 2 columns.
         !
         ! Args:
-        !   dr                    : step dr
-        !   rdf                   : radial distribution function values at 0, dr, 2dr,...
-        !   unit    (INT64)       : File unit to write on.
+        !   dr      (REAL64)       : step dr
+        !   rdf     (REAL64[bins]) : radial distribution function values at 0, dr, 2dr,...
+        !   unit    (INT64)        : File unit to write on.
         implicit none
         double precision, intent(in), dimension(:) :: rdf
         double precision, intent(in) :: dr
