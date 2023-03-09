@@ -1,5 +1,5 @@
 module integrators
-    use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
+    use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64, output_unit
     use periodic_bc, only: PBC
     use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst, compute_com_momenta
     use simulation,  only: MSD, g_r
@@ -12,7 +12,8 @@ module integrators
 
 contains
 
-    subroutine mainLoop(log_unit,traj_unit,rdf_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,gdr_num_bins,r,v)
+    subroutine mainLoop(log_unit,traj_unit,rdf_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,gdr_num_bins,r,v, &
+        write_log, write_pos)
         ! Main Simulation Loop
         !
         ! Args:
@@ -32,14 +33,14 @@ contains
         !    v      (REAL64[3,N]) : velocities of all N partciles, in reduced units.
 
         implicit none
-        integer(kind=i64), intent(in) :: log_unit,traj_unit,rdf_unit, N_steps, gdr_num_bins
-        real(kind=dp), intent(in) :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt
+        integer(kind=i64), intent(in)                :: log_unit,traj_unit,rdf_unit, N_steps, gdr_num_bins, write_log, write_pos
+        real(kind=dp), intent(in)                    :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt
         real(kind=dp), dimension(:,:), intent(inout) :: r,v
 
-        real(kind=dp), dimension(:,:), allocatable :: r0, rold, rnew, F
-        real(kind=dp) :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t, dr
-        real(kind=dp), dimension(3) :: p_com
-        real(kind=dp), dimension(:,:), allocatable :: gdr
+        real(kind=dp), dimension(:,:), allocatable   :: r0, rold, rnew, F
+        real(kind=dp)                                :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t, dr
+        real(kind=dp), dimension(3)                  :: p_com
+        real(kind=dp), dimension(:,:), allocatable   :: gdr
         integer(kind=i64) :: i,N
 
         dr = 1.5d0*L/dble(gdr_num_bins)
@@ -82,8 +83,13 @@ contains
             
             ! r = rnew
 
-            call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t)
-            call writePositions(r, traj_unit)
+            if (mod(i, write_log) == 0) call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,&
+            press,rMSD,p_com_t)
+            if (mod(i, write_pos) == 0)  call writePositions(r, traj_unit)
+
+            if (mod(i, N_steps/10) == 0) then
+                write(output_unit, '(1x,i0)', advance='no') (100*i)/N_steps
+            end if
 
         end do
 
