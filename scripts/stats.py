@@ -154,6 +154,7 @@ if __name__=="__main__":
 	parser.add_argument("-op","--opath",help="Output path (str). Folder name where the plots/output will be created. Defaults to './plots/'.",default="./plots/", type=str)
 	parser.add_argument("-s","--start",help="Start frame (int). Frame from which the output data is considered. Defaults to the first frame.",default=None, type=int)
 	parser.add_argument("-f","--final",help="Final frame (int). Frame up to which the output data is considered. Defaults to the last frame.",default=None, type=int)
+	parser.add_argument("-t","--None",help="Just for mantaining the same arguments between scripts.",default=None, type=int)
 
 	args: Namespace = parser.parse_args()
 	ipath,opath,start,finish = args.ipath,args.opath,args.start,args.final
