@@ -58,12 +58,16 @@ contains
 
         gdr = 0.0d0 ! initialization of the RDF
 
+        write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  MSD Pt"
+
         do i=1,N_steps
             time = real(i, kind=dp)*dt
             !choose integrator depending on user?
-            call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
-            !call vv_integrator(r, v, cutoff, L, dt)
+            ! call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
+            call vv_integrator(r, v, cutoff, L, dt)
             ! call euler()
+            call vel_Andersen(v,nu,T)
+
             Epot = calc_vdw_pbc(r,cutoff,L)
             Ekin = calc_KE(v)
             Etot = Epot + Ekin
@@ -74,11 +78,10 @@ contains
 
             rMSD = MSD(r,r0)
             call RDF(r,gdr,L,dr)
+            
+            ! r = rnew
 
-            call vel_Andersen(v,nu,T)
-            r = rnew
-
-            call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,T,press,rMSD,p_com_t)
+            call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t)
             call writePositions(r, traj_unit)
 
         end do
@@ -159,10 +162,10 @@ contains
 
         call calc_vdw_force(positions, cutoff, L, forces)
         
-        positions = positions + dt*velocities + 0.5d0*dt*dt*forces
+        positions = positions + (dt*velocities) + (0.5d0*dt*dt*forces)
         call PBC(positions, L)
 
-        velocities = velocities + 0.5d0*dt*forces
+        velocities = velocities + (0.5d0*dt*forces)
 
         call calc_vdw_force(positions, cutoff, L, forces)
         velocities = velocities + 0.5d0*dt*forces
