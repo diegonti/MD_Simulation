@@ -80,7 +80,7 @@ module writers_m
 
     end subroutine writePositions
 
-    subroutine writeRdf(dr,rdf,unit)
+    subroutine writeRdf(rdf,unit)
         ! Writes positions and rdf in 2 columns.
         !
         ! Args:
@@ -88,17 +88,16 @@ module writers_m
         !   rdf     (REAL64[bins]) : radial distribution function values at 0, dr, 2dr,...
         !   unit    (INT64)        : File unit to write on.
         implicit none
-        double precision, intent(in), dimension(:) :: rdf
-        double precision, intent(in) :: dr
-        double precision :: ri = 0.d0
-        integer(kind=i64), intent(in) :: unit
-        integer(kind=i64) :: i, N
+        ! In/Out variables
+        double precision, intent(in), dimension(:,:) :: rdf
+        integer(kind=i64), intent(in)                :: unit
+        ! Internal variables
+        integer(kind=i64)                            :: i, N
 
         N = size(rdf,kind=i64)
 
         do i= 1,N
-            write(unit,*) ri, rdf(i)
-            ri=ri+dr
+            write(unit,*) rdf(1,i), rdf(2, i)
         end do
 
     end subroutine writeRdf

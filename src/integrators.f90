@@ -89,7 +89,7 @@ contains
 
         call g_r(gdr, r, 3, gdr_num_bins, L, cutoff)
 
-        call writeRDF(dr,gdr,rdf_unit)
+        call writeRDF(gdr,rdf_unit)
 
         deallocate(r0)
         deallocate(rold)
