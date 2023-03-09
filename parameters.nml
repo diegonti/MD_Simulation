@@ -6,7 +6,7 @@
 
   ! Simulation related variables
   n_steps = 10000               ! Number of simulation steps
-  timestep = 0.0025,            ! Timestep (ps)
+  timestep = 0.025,            ! Timestep (ps)
   n_particles = 64,             ! Number of partiles
   density = 0.1,                ! Density (g/mL)
   cell_type = "sc",             ! Initial positions cell (sc,bcc,fcc)

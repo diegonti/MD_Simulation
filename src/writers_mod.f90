@@ -80,7 +80,7 @@ module writers_m
 
     end subroutine writePositions
 
-    subroutine writeRdf(rdf,unit)
+    subroutine writeRdf(rdf,unit, ljsigma)
         ! Writes positions and rdf in 2 columns.
         !
         ! Args:
@@ -90,14 +90,15 @@ module writers_m
         implicit none
         ! In/Out variables
         double precision, intent(in), dimension(:,:) :: rdf
+        real(kind=dp), intent(in)                    :: ljsigma
         integer(kind=i64), intent(in)                :: unit
         ! Internal variables
         integer(kind=i64)                            :: i, N
 
-        N = size(rdf,kind=i64)
+        N = size(rdf, kind=i64, dim=2)
 
         do i= 1,N
-            write(unit,*) rdf(1,i), rdf(2, i)
+            write(unit,*) rdf(1,i)*ljsigma, rdf(2, i)
         end do
 
     end subroutine writeRdf
