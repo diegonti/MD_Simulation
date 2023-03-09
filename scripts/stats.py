@@ -115,7 +115,7 @@ def plotBlockAverage(m_points,blockVar,blockMean,fit_params=None,save=True,save_
 
 	fig.tight_layout()
 
-	if save: fig.savefig(path+save_name,dpi=600)
+	if save: fig.savefig(opath+save_name,dpi=600)
 
 
 def fit(fit_function,m_points,blockSTD):
@@ -150,19 +150,22 @@ if __name__=="__main__":
 	Uses the Block Average method to compute the average <x> and the std \sigma. \
 	The STD vs. block size is fitted to a exponential function f(x) = a-b*exp(-x/tau).\
 	Returns an output file with the stats and plots of the statistichal error (STD) vs. the block size.")
-	parser.add_argument("-p","--path",help="Output path (str). Folder name where the plots/output will be created. Defaults to './plots/'.",default="./plots/", type=str)
+	parser.add_argument("-ip","--ipath",help="Input path (str). File name where the simulation data is.", type=str)
+	parser.add_argument("-op","--opath",help="Output path (str). Folder name where the plots/output will be created. Defaults to './plots/'.",default="./plots/", type=str)
 	parser.add_argument("-s","--start",help="Start frame (int). Frame from which the output data is considered. Defaults to the first frame.",default=None, type=int)
 	parser.add_argument("-f","--final",help="Final frame (int). Frame up to which the output data is considered. Defaults to the last frame.",default=None, type=int)
 
 	args: Namespace = parser.parse_args()
-	path,start,finish = args.path,args.start,args.final
-	if not path.endswith("/"): path += "/"
+	ipath,opath,start,finish = args.ipath,args.opath,args.start,args.final
+	if not opath.endswith("/"): opath += "/"
 
-	try: os.mkdir(path)
+	sim_name = ipath.split("_log")[0]
+
+	try: os.mkdir(opath)
 	except FileExistsError: pass
-	
+
 	# Loading data from test files
-	dataT = np.loadtxt("output.dat",skiprows=0)     			# Thermodynamic data
+	dataT = np.loadtxt(ipath,skiprows=0)     			# Thermodynamic data
 	data = dataT.T                          					# Each parameter in a column
 	t,E,Epot,Ekin,Tinst,P,MSD,p = data      					# Getting each parameter
 
@@ -171,7 +174,7 @@ if __name__=="__main__":
 	data_labels_f = ["E(kJ/mol)","$E_{pot}$(kJ/mol)","$E_{kin}$(kJ/mol)","T(K)","P(Pa)","MSD($\\AA^2$)","$P_T$(kg*m/s)"]
 
 	# Creating output file
-	outFile = "stats_out.dat"
+	outFile = sim_name+"_stats.log"
 	if os.path.exists(outFile): os.remove(outFile)
 
 	# Formatted table columns and title

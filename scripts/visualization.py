@@ -52,7 +52,7 @@ def makePlot(t,lines:list[np.ndarray],colours:list[str],labels:list[str],file_na
     ax.set_ylabel(kwargs.get("ylabel",None))
     ax.legend()
     fig.tight_layout()
-    if save: fig.savefig(path+file_name,dpi=600)
+    if save: fig.savefig(opath+file_name,dpi=600)
 
     return fig,ax
 
@@ -65,25 +65,30 @@ if __name__ == "__main__":
     # User input management
     parser = ArgumentParser(description="Script for plotting the results of the output data from the MD runs.\n \
     Plots Energies, Temperature, Pressure, MSD and RDF.")
-    parser.add_argument("-p","--path",help="Output path (str). Folder name where the plots/output will be created. Defaults to './plots/'.",default="./plots/", type=str)
+    parser.add_argument("-ip","--ipath",help="Input path (str). File name where the simulation data is.", type=str)
+    parser.add_argument("-op","--opath",help="Output path (str). Folder name where the plots/output will be created. Defaults to './plots/'.",default="./plots/", type=str)
     parser.add_argument("-s","--start",help="Start frame (int). Frame from which the output data is considered. Defaults to the first frame.",default=None, type=int)
     parser.add_argument("-f","--final",help="Final frame (int). Frame up to which the output data is considered. Defaults to the last frame.",default=None, type=int)
     parser.add_argument("-t","--trajectory",help="If added, a trajectory.gif file is created.", action="store_true")
 
     args: Namespace = parser.parse_args()
-    path,start,finish,make_trajectory = args.path,args.start,args.final,args.trajectory
+    ipath,opath,start,finish,make_trajectory = args.ipath,args.opath,args.start,args.final,args.trajectory
+    if not opath.endswith("/"): opath += "/"
+    sim_name = ipath.split("_log")[0]
 
-    try: os.mkdir(path)
+
+
+    try: os.mkdir(opath)
     except FileExistsError: pass
     print("Making Plots...")
     
     # Loading data from files
-    dataT = np.loadtxt("output.dat",skiprows=0)     			# Thermodynamic data
+    dataT = np.loadtxt(ipath,skiprows=0)     			# Thermodynamic data
     data = dataT.T                          					# Each parameter in a column
     t,E,Epot,Ekin,Tinst,P,MSD,p = data      					# Getting each parameter
     
-    # dataRDF = np.loadtxt("RDF_out.dat").T
-    # r,RDF = dataRDF
+    dataRDF = np.loadtxt(sim_name+"_rdf.log",skiprows=0).T
+    r,RDF = dataRDF
 
     # Energies Plot
     makePlot(t,[Ekin,Epot,E],["r","b","k"],["$E_{kin}$","$E_{pot}$","$E$"],
@@ -110,14 +115,13 @@ if __name__ == "__main__":
     #! Show D in plot?
 
     axMSD.plot(t[start:finish],a*t[start:finish]+b,"k:",alpha=0.75)
-    figMSD.savefig(path+"MSD.png",dpi=600)
+    figMSD.savefig(opath+"MSD.png",dpi=600)
 
     # RDF Plot
-    # makePlot(r,RDF,"red","RDF",
-    #          file_name="RDF.png",
-    #          xlabel="RDF",ylabel="r ($\AA$)")
-    # 
-
+    makePlot(r,RDF,"red","RDF",
+             file_name="RDF.png",
+             xlabel="RDF",ylabel="r ($\AA$)")
+    
 
     # Trajectory #!(make this user input?)
     make_trajectory = False
@@ -126,7 +130,7 @@ if __name__ == "__main__":
         if os.path.exists("trajectory.xyz"):
             try:
                 frames = io.read("trajectory.xyz", index=":")
-                io.write(path+"trajectory.gif", frames, interval=50)
+                io.write(opath+"trajectory.gif", frames, interval=50)
                 print(f"Trajectory.gif was created.")
 
             except:
