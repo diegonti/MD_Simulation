@@ -82,6 +82,7 @@ program main
     ! ~ Closing files ~
     close(log_unit)
     close(traj_unit)
+    close(rdf_unit)
     
     ! ~ Program finalization ~
     call cpu_time(end_time)
