@@ -91,7 +91,7 @@ contains
     end subroutine neighbour_distances
 
 
-    function MSD(positions, initial_positions)
+    function MSD(positions, initial_positions, L)
         !
         !  This function calculates the value of the Mean Squared Displacement from
         ! the values of the current positions and the initial positions of the 
@@ -100,23 +100,28 @@ contains
         ! Args:
         !   positions         (REAL64[3,N]) : The current positions' matrix of the system.
         !   initial_positions (REAL64[3,N]) : The initial positions' matrix of the system.
+        !   L                      (REAL64) : Length of the sides of the box, in reduced units.
         
         ! Returns:
         !   MSD (REAL64[:]) : Value of the mean squared displacement of the system.
         !
 
-        double precision, dimension(:,:), intent(in) :: positions, initial_positions
-        double precision                             :: MSD
+        double precision, dimension(:,:), intent(in)        :: positions, initial_positions
+        double precision, intent(in)                        :: L
+        double precision                                    :: MSD
         ! local variables
-        integer(kind=i64)                            :: i, N
+        double precision, dimension(3,size(positions(1,:))) :: r_aux
+        integer(kind=i64)                                   :: i, N
 
         N = size(positions(1,:), kind=i64)
 
         MSD = 0.0d0
 
+        r_aux = positions - initial_positions
+        call PBC(r_aux, L)
+
         do i = 1, N
-            MSD = MSD + sum(initial_positions(:,i) - positions(:,i))*& 
-                        sum(initial_positions(:,i) - positions(:,i))
+            MSD = MSD + sum(r_aux(:,i)*r_aux(:,i))  
         end do
         
         MSD = MSD / dble(N)
