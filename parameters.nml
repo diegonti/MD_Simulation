@@ -6,9 +6,9 @@
 
   ! Simulation related variables
   n_steps = 10000               ! Number of simulation steps
-  timestep = 0.025,            ! Timestep (ps)
-  n_particles = 64,             ! Number of partiles
-  density = 0.1,                ! Density (g/mL)
+  timestep = 0.025,             ! Timestep [ps]
+  n_particles = 64,             ! Number of particles
+  density = 0.1,                ! Density [g/mL]
   cell_type = "sc",             ! Initial positions cell (sc,bcc,fcc)
   init_velocities = "bimodal",  ! Initial velocities (zero, bimodal)
   ! The number of particles must follow the formula n_particles = f*M^3
@@ -16,17 +16,17 @@
   ! f(sc)=1, f(bcc)=2, f(fcc)=4
 
   ! I/O variables
+  sim_name = "simulation",   ! Simulation name
   write_file = 100,
   write_stats = 1000,
-  write_frame = 100,
-  sim_name = "dens_0-01",
+  write_frame = 100,         
 
   ! Thermostat variables
-  andersen_nu = 0.7,
-  temperature = 100,
+  andersen_nu = 0.7,        ! Thermostat probability
+  temperature = 100,        ! Temperature [K]
 
   ! Analysis dependent variables
-  gdr_num_bins = 100
+  gdr_num_bins = 100        ! Number of bins for RDF calculation
 
 /
 
