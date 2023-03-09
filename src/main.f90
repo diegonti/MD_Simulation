@@ -11,6 +11,7 @@ program main
     ! ~ Memory definition ~
     ! Array variables
     double precision, allocatable,dimension(:,:) :: r, v
+    integer, allocatable, dimension(:)           :: state
 
     ! Scalar variables
     integer(kind=i32) :: status_cli
@@ -18,6 +19,8 @@ program main
     log_unit, traj_unit, rdf_unit
     real(kind=dp)     :: init_time, end_time, density, L, a, T, lj_epsilon, lj_sigma, mass, dt, &
     andersen_nu
+    integer, parameter:: seed_number = 165432156
+    integer                                      :: state_size
 
     ! String variables
     character(len=2048) :: nml_path, sim_name, log_name, traj_name, rdf_name
@@ -27,6 +30,13 @@ program main
     !!! ~ MAIN PROGRAM ~ !!!
 
     call cpu_time(init_time)
+
+    ! Setting random seed of RNG
+    call random_seed( size=state_size )
+    allocate(state(state_size))
+    state = seed_number
+    call random_seed( put=state )
+
     write(output_unit, '(A)') '~ Welcome to MDEMI!! ~'
     write(output_unit, '(A)') 'Reading input file...'
 
