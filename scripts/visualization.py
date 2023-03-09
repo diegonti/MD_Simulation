@@ -76,15 +76,12 @@ if __name__ == "__main__":
     if not opath.endswith("/"): opath += "/"
     sim_name = ipath.split("_log")[0]
 
-
-
     try: os.mkdir(opath)
     except FileExistsError: pass
     print("Making Plots...")
     
     # Loading data from files
-    dataT = np.loadtxt(ipath,skiprows=0)     			# Thermodynamic data
-    data = dataT.T                          					# Each parameter in a column
+    data = np.loadtxt(ipath,skiprows=1).T     			# Thermodynamic data
     t,E,Epot,Ekin,Tinst,P,MSD,p = data      					# Getting each parameter
     
     dataRDF = np.loadtxt(sim_name+"_rdf.log",skiprows=0).T
@@ -111,7 +108,7 @@ if __name__ == "__main__":
             file_name="MSD.png", save=False,
             xlabel="Time (ps)", ylabel="MSD ($\AA^2$)")
     a,b = np.polyfit(t[start:finish],MSD[start:finish],deg=1)     # linear fit to ax + b
-    D = a/6  * 1e12 /1e20 # (Diffusion coeffitient)
+    D = a/6  * 1e12 /1e20 # (Diffusion coeffitient in m2/s)
     #! Show D in plot?
 
     axMSD.plot(t[start:finish],a*t[start:finish]+b,"k:",alpha=0.75)
@@ -126,14 +123,17 @@ if __name__ == "__main__":
     # Trajectory
     if make_trajectory:
         from ase import io
-        if os.path.exists("trajectory.xyz"):
+        traj_name = sim_name+"_trajectory.xyz"
+        if os.path.exists(traj_name):
+            print("Making trajectory GIF...")
             try:
-                frames = io.read("trajectory.xyz", index=":")
+                frames = io.read(traj_name, index=":")
                 io.write(opath+"trajectory.gif", frames, interval=50)
                 print(f"Trajectory.gif was created.")
 
             except:
-                print("ase could not read the trajectory.xyz file. Make sure the format is correct (as .xyz).")
+                traj_name = sim_name+"_trajectory.xyz"
+                print(f"ase could not read the {traj_name} file. Make sure the format is correct (as .xyz).")
         else: print("Structure trajectory not found. Make sure the file was created.")
 
 tf = cpu_time.time()

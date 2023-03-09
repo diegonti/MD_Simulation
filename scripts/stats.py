@@ -165,7 +165,7 @@ if __name__=="__main__":
 	except FileExistsError: pass
 
 	# Loading data from test files
-	dataT = np.loadtxt(ipath,skiprows=0)     			# Thermodynamic data
+	dataT = np.loadtxt(ipath,skiprows=1)     			# Thermodynamic data
 	data = dataT.T                          					# Each parameter in a column
 	t,E,Epot,Ekin,Tinst,P,MSD,p = data      					# Getting each parameter
 
