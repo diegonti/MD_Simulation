@@ -47,6 +47,13 @@ simulation.o: simulation.f90
 integrators.o: integrators.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
+# make run
+
+# make plots
+# python scripts/stats.py -ip input_path -op output_folder -s start -f finish #(por defecto op = plots/, start=0, finish=-1)
+# python scripts/visualization.py -ip input_path -op output_folder -s start -f finish -t #(por defecto op = plots/, start=0, finish=-1)
+
+
 
 # Defined recipies:
 .PHONY: clean

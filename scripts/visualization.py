@@ -2,7 +2,7 @@
 Script for plotting the results of the output data from the MD runs.
 Plots Energies, Temperature, Pressure, MSD and RDF.
 
-Use: $ python3 visualization.py -p path -s start -f final
+Use: $ python3 visualization.py -ip input_path -op output_path -s start -f final
 although if any arguments is not present chooses from the default 
 path, start,finish = ./plots/, 0,-1 
 
@@ -52,7 +52,7 @@ def makePlot(t,lines:list[np.ndarray],colours:list[str],labels:list[str],file_na
     ax.set_ylabel(kwargs.get("ylabel",None))
     ax.legend()
     fig.tight_layout()
-    if save: fig.savefig(path+file_name,dpi=600)
+    if save: fig.savefig(opath+file_name,dpi=600)
 
     return fig,ax
 
@@ -65,25 +65,27 @@ if __name__ == "__main__":
     # User input management
     parser = ArgumentParser(description="Script for plotting the results of the output data from the MD runs.\n \
     Plots Energies, Temperature, Pressure, MSD and RDF.")
-    parser.add_argument("-p","--path",help="Output path (str). Folder name where the plots/output will be created. Defaults to './plots/'.",default="./plots/", type=str)
+    parser.add_argument("-ip","--ipath",help="Input path (str). File name where the simulation data is.", type=str)
+    parser.add_argument("-op","--opath",help="Output path (str). Folder name where the plots/output will be created. Defaults to './plots/'.",default="./plots/", type=str)
     parser.add_argument("-s","--start",help="Start frame (int). Frame from which the output data is considered. Defaults to the first frame.",default=None, type=int)
     parser.add_argument("-f","--final",help="Final frame (int). Frame up to which the output data is considered. Defaults to the last frame.",default=None, type=int)
     parser.add_argument("-t","--trajectory",help="If added, a trajectory.gif file is created.", action="store_true")
 
     args: Namespace = parser.parse_args()
-    path,start,finish,make_trajectory = args.path,args.start,args.final,args.trajectory
+    ipath,opath,start,finish,make_trajectory = args.ipath,args.opath,args.start,args.final,args.trajectory
+    if not opath.endswith("/"): opath += "/"
+    sim_name = ipath.split("_log")[0]
 
-    try: os.mkdir(path)
+    try: os.mkdir(opath)
     except FileExistsError: pass
     print("Making Plots...")
     
     # Loading data from files
-    dataT = np.loadtxt("output.dat",skiprows=0)     			# Thermodynamic data
-    data = dataT.T                          					# Each parameter in a column
+    data = np.loadtxt(ipath,skiprows=1).T     			# Thermodynamic data
     t,E,Epot,Ekin,Tinst,P,MSD,p = data      					# Getting each parameter
     
-    # dataRDF = np.loadtxt("RDF_out.dat").T
-    # r,RDF = dataRDF
+    dataRDF = np.loadtxt(sim_name+"_rdf.log",skiprows=0).T
+    r,RDF = dataRDF
 
     # Energies Plot
     makePlot(t,[Ekin,Epot,E],["r","b","k"],["$E_{kin}$","$E_{pot}$","$E$"],
@@ -106,31 +108,32 @@ if __name__ == "__main__":
             file_name="MSD.png", save=False,
             xlabel="Time (ps)", ylabel="MSD ($\AA^2$)")
     a,b = np.polyfit(t[start:finish],MSD[start:finish],deg=1)     # linear fit to ax + b
-    D = a/6  * 1e12 /1e20 # (Diffusion coeffitient)
+    D = a/6  * 1e12 /1e20 # (Diffusion coeffitient in m2/s)
     #! Show D in plot?
 
     axMSD.plot(t[start:finish],a*t[start:finish]+b,"k:",alpha=0.75)
-    figMSD.savefig(path+"MSD.png",dpi=600)
+    figMSD.savefig(opath+"MSD.png",dpi=600)
 
     # RDF Plot
-    # makePlot(r,RDF,"red","RDF",
-    #          file_name="RDF.png",
-    #          xlabel="RDF",ylabel="r ($\AA$)")
-    # 
+    makePlot(r,RDF,"red","RDF",
+             file_name="RDF.png",
+             xlabel="RDF",ylabel="r ($\AA$)")
+    
 
-
-    # Trajectory #!(make this user input?)
-    make_trajectory = False
+    # Trajectory
     if make_trajectory:
         from ase import io
-        if os.path.exists("trajectory.xyz"):
+        traj_name = sim_name+"_trajectory.xyz"
+        if os.path.exists(traj_name):
+            print("Making trajectory GIF...")
             try:
-                frames = io.read("trajectory.xyz", index=":")
-                io.write(path+"trajectory.gif", frames, interval=50)
+                frames = io.read(traj_name, index=":")
+                io.write(opath+"trajectory.gif", frames, interval=50)
                 print(f"Trajectory.gif was created.")
 
             except:
-                print("ase could not read the trajectory.xyz file. Make sure the format is correct (as .xyz).")
+                traj_name = sim_name+"_trajectory.xyz"
+                print(f"ase could not read the {traj_name} file. Make sure the format is correct (as .xyz).")
         else: print("Structure trajectory not found. Make sure the file was created.")
 
 tf = cpu_time.time()
