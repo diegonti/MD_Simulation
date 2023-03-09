@@ -46,6 +46,26 @@ contains
     end function MSD
 
     subroutine g_r(gr_mat, pos, switch_case, num_bins, L, cutoff)
+        ! Author: Marc Alsina <marcalsinac@gmail.com>
+        !
+        ! Subroutine that performs a radial distribution finction
+        !
+        ! Args:
+        !   gr_mat (REAL64[2,:]): The allocated radial distribution function
+        !   pos    (REAL64[3,N]): Atoms positions at a given time step
+        !   switch_case  (INT64): The selector for the calculation. 1: allocate mmemory,
+        !                         2: compute the binning, 3: normalizie the binning
+        !   num_bins     (INT64): Number of bins to use to generate the rdf
+        !   L           (REAL64): Simulation side box
+        !   cutoff      (REAL64): The cutoff to account for interactions
+        !
+        ! Returns:
+        !   gr_mat (REAL64[2,:]): At case 1, it doesn't return nothing, at case 2,
+        !                         it is the distance array selected, and the binning 
+        !                         is performed. At stage 3, it returns in the first
+        !                         dimension of rank 1 the dinstances, and the second 
+        !                         RDF values.
+
         ! Notes
         ! gr_mat(1,:) -> valors de distancia
         ! gr_mat(2,:) -> numero de partícules a aquesta distancia
