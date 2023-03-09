@@ -41,6 +41,8 @@ contains
 
         r = r - (L / 2.0_dp)
 
+        gdr = 0.0d0 ! initialization of the RDF
+
         do i=1,N_steps
             time = real(i, kind=dp)*dt
             !choose integrator depending on user?
@@ -292,7 +294,7 @@ contains
                     call random_number(x1)
                     call random_number(x2)
 
-                    call boxmuller(sig, x1, x2, vel(i,k))
+                    call boxmuller(sig, x1, x2, vel(k,i))
                 enddo
             endif
         enddo
