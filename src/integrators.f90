@@ -12,7 +12,8 @@ module integrators
 
 contains
 
-    subroutine mainLoop(log_unit,traj_unit,rdf_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,gdr_num_bins,r,v, write_log, write_pos)
+    subroutine mainLoop(log_unit,traj_unit,rdf_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,gdr_num_bins,r,v, &
+        write_log, write_pos)
         ! Main Simulation Loop
         !
         ! Args:
@@ -82,7 +83,8 @@ contains
             
             ! r = rnew
 
-            if (mod(N, write_log) == 0) call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t)
+            if (mod(N, write_log) == 0) call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,&
+            press,rMSD,p_com_t)
             if (mod(N, write_pos) == 0)  call writePositions(r, traj_unit)
 
         end do
