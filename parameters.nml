@@ -7,9 +7,9 @@
   ! Simulation related variables
   n_steps = 1000                ! Number of simulation steps
   timestep = 0.0025,            ! Timestep (ps)
-  n_particles = 256,            ! Number of partiles
+  n_particles = 64,             ! Number of partiles
   density = 0.1,                ! Density (g/mL)
-  cell_type = "fcc",            ! Initial positions cell (sc,bcc,fcc)
+  cell_type = "sc",             ! Initial positions cell (sc,bcc,fcc)
   init_velocities = "bimodal",  ! Initial velocities (zero, bimodal)
   ! The number of particles must follow the formula n_particles = f*M^3
   ! where f is the number of atoms in the selected cell and M an integer.
