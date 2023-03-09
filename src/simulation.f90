@@ -30,16 +30,15 @@ contains
         !   distribution (REAL64[:]) : The current RDF of the system.
         !
 
-        double precision, dimension(:,:), intent(in)         :: positions
-        double precision, dimension(:), intent(inout)        :: distribution
-        double precision, intent(in)                         :: L, dr
+        double precision, dimension(:,:), intent(in)  :: positions
+        double precision, dimension(:), intent(inout) :: distribution
+        double precision, intent(in)                  :: L, dr
         ! local variables
-        double precision, dimension(size(positions(:,1)), 1) :: r_ij
-        double precision, dimension(27)                      :: neighbour_dist
-        integer(kind=i64)                                    :: i, j, k, N, M
+        double precision, dimension(3, 1)             :: r_ij
+        double precision, dimension(27)               :: neighbour_dist
+        integer(kind=i64)                             :: i, j, k, N
 
         N = size(positions(1,:),kind=i64)
-        M = size(positions(:,1),kind=i64)
 
         do i = 1, N
             do j = i+1_i64, N
@@ -48,8 +47,8 @@ contains
                 call neighbour_distances(r_ij(:,1), L, neighbour_dist)
                 do k = 1, 27
                     if (neighbour_dist(k) <= 1.5d0*L) then
-                        distribution(int(neighbour_dist(k)/dr) + 1) = &
-                        distribution(int(neighbour_dist(k)/dr) + 1) + 1.0d0
+                        distribution(int(neighbour_dist(k)/dr)) = &
+                        distribution(int(neighbour_dist(k)/dr)) + 1.0d0
                     end if
                 end do
             end do

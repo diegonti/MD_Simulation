@@ -27,7 +27,7 @@ module writers_m
         double precision, parameter :: kb = 1.380649d-23
 
         ! Conversion factors between reduced and real units
-        ru_time = sqrt(mass*(lj_sigma*1d-10)**2_i64 / (lj_epsilon*1d6))     ! t in seconds
+        ru_time = sqrt(mass*(lj_sigma*1d-10)**2_i64 / (lj_epsilon*1d6))*1d12! t in ps
         ru_dist = lj_sigma                                                  ! distance in Ang
         ru_dens = 1d24 * mass / (Na*lj_sigma**3_i64)                        ! density in g/mL
         ru_E = lj_epsilon                                                   ! energy in kJ/mol
@@ -61,7 +61,7 @@ module writers_m
         !   r       (REAL64[3,N]) : 3xN Positions matrix.  
         !   unit    (INT64)       : File unit to write on.
         implicit none
-        double precision, intent(in),dimension(:,:) :: r
+        double precision, dimension(:,:),intent(in) :: r
         integer(kind=i64), intent(in) :: unit
         integer(kind=i64) :: i, N
 
@@ -72,6 +72,11 @@ module writers_m
         do i= 1,N
             write(unit,'(A,F20.8,F20.8,F20.8)') "A", r(1,i), r(2,i), r(3,i)
         end do
+        ! write(unit,*) N
+        ! write(unit,*)
+        ! do i= 1,N
+        !     write(unit,*) "X", r(:,i)
+        ! end do
 
     end subroutine writePositions
 
