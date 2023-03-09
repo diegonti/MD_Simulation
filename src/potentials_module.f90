@@ -196,6 +196,7 @@ contains
 
         do i = 1, n_part - 1
             do j = i + 1, n_part
+                ! print*, rij
                 
                 rij(1,1) = pos(1, i) - pos(1, j)
                 rij(2,1) = pos(2, i) - pos(2, j)

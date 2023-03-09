@@ -5,6 +5,7 @@ program main
     use            :: testing
     use            :: readers_m,      only: read_nml
     use            :: integrators,    only: mainLoop
+    use            :: writers_m,      only: writePositions
     implicit none
 
     ! ~ Memory definition ~
@@ -76,12 +77,17 @@ program main
 
     ! ~ Starting the trajectory of the system ~
     call mainLoop(log_unit, traj_unit, rdf_unit, lj_epsilon, lj_sigma, mass, &
-    n_steps, dt, L, T, andersen_nu, 0.5_dp*a, gdr_num_bins, r, v)
+    n_steps, dt, L, T, andersen_nu, 0.5_dp*L, gdr_num_bins, r, v)    
 
 
     ! ~ Closing files ~
     close(log_unit)
     close(traj_unit)
+    close(rdf_unit)
+
+    ! ~ Memmory deallocation ~
+    deallocate(r)
+    deallocate(v)
     
     ! ~ Program finalization ~
     call cpu_time(end_time)
