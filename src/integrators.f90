@@ -1,5 +1,5 @@
 module integrators
-    use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
+    use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64, output_unit
     use periodic_bc, only: PBC
     use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst, compute_com_momenta
     use simulation,  only: MSD, g_r
