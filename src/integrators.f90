@@ -83,9 +83,13 @@ contains
             
             ! r = rnew
 
-            if (mod(N, write_log) == 0) call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,&
+            if (mod(i, write_log) == 0) call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,&
             press,rMSD,p_com_t)
-            if (mod(N, write_pos) == 0)  call writePositions(r, traj_unit)
+            if (mod(i, write_pos) == 0)  call writePositions(r, traj_unit)
+
+            if (mod(i, N_steps/10) == 0) then
+                write(output_unit, '(1x,i0)', advance='no') (100*i)/N_steps
+            end if
 
         end do
 
