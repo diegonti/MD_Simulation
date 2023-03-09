@@ -2,7 +2,7 @@ module integrators
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
     use periodic_bc, only: PBC
     use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst, compute_com_momenta
-    use simulation,  only: MSD, RDF
+    use simulation,  only: MSD, g_r
     use writers_m,   only: writePositions, writeRdf, writeSystem
     use testing
 
@@ -39,7 +39,7 @@ contains
         real(kind=dp), dimension(:,:), allocatable :: r0, rold, rnew, F
         real(kind=dp) :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t, dr
         real(kind=dp), dimension(3) :: p_com
-        real(kind=dp), dimension(gdr_num_bins) :: gdr
+        real(kind=dp), dimension(:,:), allocatable :: gdr
         integer(kind=i64) :: i,N
 
         dr = 1.5d0*L/dble(gdr_num_bins)
@@ -49,6 +49,7 @@ contains
         allocate(rold(3,N))
         allocate(rnew(3,N))
         allocate(F(3,N))
+        allocate(gdr(2,gdr_num_bins))
 
 
         F = 0.0_dp
@@ -56,7 +57,7 @@ contains
         r0 = r  ! Saving initial configuration (for MSD)
         r = r - (L / 2.0_dp)
 
-        gdr = 0.0d0 ! initialization of the RDF
+        call g_r(gdr, r, 1, gdr_num_bins, L, cutoff)
 
         write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  MSD Pt"
 
@@ -77,7 +78,7 @@ contains
             p_com_t = dsqrt(dot_product(p_com,p_com))
 
             rMSD = MSD(r,r0,L)
-            call RDF(r,gdr,L,dr)
+            call g_r(gdr, r, 2, gdr_num_bins, L, cutoff)
             
             ! r = rnew
 
@@ -85,6 +86,8 @@ contains
             call writePositions(r, traj_unit)
 
         end do
+
+        call g_r(gdr, r, 3, gdr_num_bins, L, cutoff)
 
         call writeRDF(dr,gdr,rdf_unit)
 
