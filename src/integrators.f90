@@ -43,7 +43,7 @@ contains
         real(kind=dp), dimension(:,:), allocatable   :: gdr
         integer(kind=i64) :: i,N
 
-        dr = 1.5d0*L/dble(gdr_num_bins)
+        dr = cutoff/dble(gdr_num_bins)
         N = size(r,dim=2,kind=i64)
 
         allocate(r0(3,N))
