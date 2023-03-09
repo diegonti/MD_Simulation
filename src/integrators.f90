@@ -39,10 +39,14 @@ contains
         rold = r
         r0 = r  ! Saving initial configuration (for MSD)
 
+        r = r - (L / 2.0_dp)
+
+        gdr = 0.0d0 ! initialization of the RDF
+
         do i=1,N_steps
             time = real(i, kind=dp)*dt
             !choose integrator depending on user?
-            ! call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
+            call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
             ! call vv_integrator(r, v, cutoff, L, dt)
             ! call euler()
             Epot = calc_vdw_pbc(r,cutoff,L)
@@ -290,7 +294,7 @@ contains
                     call random_number(x1)
                     call random_number(x2)
 
-                    call boxmuller(sig, x1, x2, vel(i,k))
+                    call boxmuller(sig, x1, x2, vel(k,i))
                 enddo
             endif
         enddo

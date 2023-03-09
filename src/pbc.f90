@@ -29,9 +29,9 @@ contains
 
         do j = 1, M
             do i = 1, N
-                if (positions(j,i) > L/2.d0) then
+                if (positions(j,i) > (L/2.0_dp)) then
                     positions(j,i) = positions(j,i) - L
-                else if (positions(j,i) < -L/2.d0) then
+                else if (positions(j,i) < -(L/2.0_dp)) then
                     positions(j,i) = positions(j,i) + L
                 end if
             end do

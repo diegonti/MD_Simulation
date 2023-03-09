@@ -76,7 +76,7 @@ program main
 
     ! ~ Starting the trajectory of the system ~
     call mainLoop(log_unit, traj_unit, rdf_unit, lj_epsilon, lj_sigma, mass, &
-    n_steps, dt, a, T, andersen_nu, 0.5_dp*a, gdr_num_bins, r, v)
+    n_steps, dt, L, T, andersen_nu, 0.5_dp*a, gdr_num_bins, r, v)
 
 
     ! ~ Closing files ~
