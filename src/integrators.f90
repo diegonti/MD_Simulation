@@ -73,6 +73,7 @@ contains
         deallocate(r0)
         deallocate(rold)
         deallocate(rnew)
+        deallocate(F)
 
 
     end subroutine mainLoop
