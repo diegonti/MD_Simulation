@@ -72,11 +72,7 @@ module writers_m
         do i= 1,N
             write(unit,'(A,F20.8,F20.8,F20.8)') "Xe", r(1,i), r(2,i), r(3,i)
         end do
-        ! write(unit,*) N
-        ! write(unit,*)
-        ! do i= 1,N
-        !     write(unit,*) "X", r(:,i)
-        ! end do
+
 
     end subroutine writePositions
 
