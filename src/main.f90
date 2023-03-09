@@ -5,7 +5,6 @@ program main
     use            :: testing
     use            :: readers_m,      only: read_nml
     use            :: integrators,    only: mainLoop
-    use            :: writers_m,      only: writePositions
     implicit none
 
     ! ~ Memory definition ~
@@ -101,6 +100,7 @@ program main
     
     ! ~ Program finalization ~
     call cpu_time(end_time)
+    write(output_unit,'(A)') ''
     write(output_unit, '(A,F12.8,A)') 'Execution done in: ', end_time - init_time, ' seconds.'
 
 end program main
