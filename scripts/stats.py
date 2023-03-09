@@ -18,8 +18,8 @@ from argparse import ArgumentParser, Namespace
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
-warnings.filterwarnings("ignore", category=RuntimeWarning)
-warnings.filterwarnings("ignore", category=sp.optimize.OptimizeWarning)
+# warnings.filterwarnings("ignore", category=RuntimeWarning)
+# warnings.filterwarnings("ignore", category=sp.optimize.OptimizeWarning)
 
 to = cpu_time.time()
 
