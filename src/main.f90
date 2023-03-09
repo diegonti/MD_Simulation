@@ -5,7 +5,6 @@ program main
     use            :: testing
     use            :: readers_m,      only: read_nml
     use            :: integrators,    only: mainLoop
-    use            :: writers_m,      only: writePositions
     implicit none
 
     ! ~ Memory definition ~
@@ -64,7 +63,7 @@ program main
     ! Opening files
     ! log_unit  -> file where the simulation time, energy, instant temperature, etc.. will be placed
     ! traj_name -> trajectory file, where the xyz of each snapshot is placed 
-    ! rdf_name -> RDF file, where the RDF will be weitten 
+    ! rdf_name -> RDF file, where the RDF will be written 
 
 
     log_name = trim(sim_name) // "_logfile.log"
@@ -101,6 +100,7 @@ program main
     
     ! ~ Program finalization ~
     call cpu_time(end_time)
+    write(output_unit,'(A)') ''
     write(output_unit, '(A,F12.8,A)') 'Execution done in: ', end_time - init_time, ' seconds.'
 
 end program main
