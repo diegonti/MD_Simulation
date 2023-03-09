@@ -76,7 +76,7 @@ contains
             call compute_com_momenta(v,p_com)
             p_com_t = dsqrt(dot_product(p_com,p_com))
 
-            rMSD = MSD(r,r0)
+            rMSD = MSD(r,r0,L)
             call RDF(r,gdr,L,dr)
             
             ! r = rnew
