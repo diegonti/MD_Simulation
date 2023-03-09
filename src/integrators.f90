@@ -61,8 +61,8 @@ contains
         do i=1,N_steps
             time = real(i, kind=dp)*dt
             !choose integrator depending on user?
-            call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
-            !call vv_integrator(r, v, cutoff, L, dt)
+            !call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
+            call vv_integrator(r, v, cutoff, L, dt)
             ! call euler()
             Epot = calc_vdw_pbc(r,cutoff,L)
             Ekin = calc_KE(v)
@@ -76,9 +76,9 @@ contains
             call RDF(r,gdr,L,dr)
 
             call vel_Andersen(v,nu,T)
-            r = rnew
+            ! r = rnew
 
-            call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,T,press,rMSD,p_com_t)
+            call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t)
             call writePositions(r, traj_unit)
 
         end do
