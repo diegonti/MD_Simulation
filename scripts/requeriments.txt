@@ -1,4 +1,4 @@
-numpy
-scipy
-matplotlib
-ase
+numpy==1.24.2
+scipy==1.9.1
+matplotlib==3.5.2
+ase==3.22.1
