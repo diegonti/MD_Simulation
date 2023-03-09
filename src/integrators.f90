@@ -61,7 +61,7 @@ contains
         call g_r(gdr, r, 1_i64, gdr_num_bins, L, cutoff)
 
         write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  MSD Pt"
-
+        write(output_unit,"(a)",advance='no') "Completed (%): "
         do i=1,N_steps
             time = real(i, kind=dp)*dt
             !choose integrator depending on user?
