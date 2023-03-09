@@ -55,8 +55,8 @@ contains
 
         F = 0.0_dp
         rold = r
-        r0 = r  ! Saving initial configuration (for MSD)
         r = r - (L / 2.0_dp)
+        r0 = r  ! Saving initial configuration (for MSD)
 
         call g_r(gdr, r, 1_i64, gdr_num_bins, L, cutoff)
 
