@@ -39,10 +39,12 @@ contains
         rold = r
         r0 = r  ! Saving initial configuration (for MSD)
 
+        r = r - (L / 2.0_dp)
+
         do i=1,N_steps
             time = real(i, kind=dp)*dt
             !choose integrator depending on user?
-            ! call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
+            call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
             ! call vv_integrator(r, v, cutoff, L, dt)
             ! call euler()
             Epot = calc_vdw_pbc(r,cutoff,L)
