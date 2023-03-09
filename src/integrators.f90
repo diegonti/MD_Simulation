@@ -57,7 +57,7 @@ contains
         r0 = r  ! Saving initial configuration (for MSD)
         r = r - (L / 2.0_dp)
 
-        call g_r(gdr, r, 1, gdr_num_bins, L, cutoff)
+        call g_r(gdr, r, 1_i64, gdr_num_bins, L, cutoff)
 
         write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  MSD Pt"
 
@@ -78,7 +78,7 @@ contains
             p_com_t = dsqrt(dot_product(p_com,p_com))
 
             rMSD = MSD(r,r0,L)
-            call g_r(gdr, r, 2, gdr_num_bins, L, cutoff)
+            call g_r(gdr, r, 2_i64, gdr_num_bins, L, cutoff)
             
             ! r = rnew
 
@@ -87,7 +87,7 @@ contains
 
         end do
 
-        call g_r(gdr, r, 3, gdr_num_bins, L, cutoff)
+        call g_r(gdr, r, 3_i64, gdr_num_bins, L, cutoff)
 
         call writeRDF(gdr,rdf_unit)
 
