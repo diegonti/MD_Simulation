@@ -5,9 +5,9 @@
   mass = 40.0,      ! [g/mol]
 
   ! Simulation related variables
-  n_steps = 100                 ! Number of simulation steps
+  n_steps = 1000                ! Number of simulation steps
   timestep = 0.0025,            ! Timestep (ps)
-  n_particles = 108,            ! Number of partiles
+  n_particles = 256,            ! Number of partiles
   density = 0.1,                ! Density (g/mL)
   cell_type = "fcc",            ! Initial positions cell (sc,bcc,fcc)
   init_velocities = "bimodal",  ! Initial velocities (zero, bimodal)
