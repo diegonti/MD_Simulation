@@ -2,7 +2,7 @@
 Script for plotting the results of the output data from the MD runs.
 Plots Energies, Temperature, Pressure, MSD and RDF.
 
-Use: $ python3 visualization.py -p path -s start -f final
+Use: $ python3 visualization.py -ip input_path -op output_path -s start -f final
 although if any arguments is not present chooses from the default 
 path, start,finish = ./plots/, 0,-1 
 
@@ -123,8 +123,7 @@ if __name__ == "__main__":
              xlabel="RDF",ylabel="r ($\AA$)")
     
 
-    # Trajectory #!(make this user input?)
-    make_trajectory = False
+    # Trajectory
     if make_trajectory:
         from ase import io
         if os.path.exists("trajectory.xyz"):

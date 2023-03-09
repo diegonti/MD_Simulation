@@ -4,7 +4,7 @@ Uses the Block Average method to compute the average <x> and the std \sigma.
 The STD vs. block size is fitted to a exponential function f(x) = a-b*exp(-x/tau).
 Returns an output file with the stats and plots of the statistichal error (STD) vs. the block size.
 
-Use with: $ python3 stats.py -p path -s start -f finish
+Use with: $ python3 stats.py -ip input_path -op output_path -s start -f final
 although if any arguments is not present chooses from the default 
 path, start,finish = ./plots/, 0,-1 
 
