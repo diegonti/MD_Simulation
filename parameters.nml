@@ -1,11 +1,11 @@
 &PARAMS
 ! Particle related variables
-  lj_epsilon=0.998, ! [kJ/mol]
-  lj_sigma = 3.4,   ! [A]
-  mass = 40.0,      ! [g/mol]
+  lj_epsilon = 0.219,   ! [kJ/mol]
+  lj_sigma = 4.055,   ! [Ang]
+  mass = 40.0,        ! [g/mol]
 
   ! Simulation related variables
-  n_steps = 10000               ! Number of simulation steps
+  n_steps = 50000               ! Number of simulation steps
   timestep = 0.025,             ! Timestep [ps]
   n_particles = 64,             ! Number of particles
   density = 0.1,                ! Density [g/mL]
@@ -16,14 +16,14 @@
   ! f(sc)=1, f(bcc)=2, f(fcc)=4
 
   ! I/O variables
-  sim_name = "simulation",   ! Simulation name
+  sim_name = "simulation",    ! Simulation name
+  write_stats = 10,           ! Steps between each stats writing
+  write_frame = 100,          ! Steps between each trajectory writing
   write_file = 100,
-  write_stats = 1000,
-  write_frame = 100,         
 
   ! Thermostat variables
   andersen_nu = 0.7,        ! Thermostat probability
-  temperature = 100,        ! Temperature [K]
+  temperature = 300,        ! Temperature [K]
 
   ! Analysis dependent variables
   gdr_num_bins = 100        ! Number of bins for RDF calculation
