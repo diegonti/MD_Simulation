@@ -1,5 +1,8 @@
 # Project I : MD Simulation of a VdW Gas
 
+This is the official reposotory for the Advanced Computational Tools master subject final project, from the Atomistic and Multiscale Computational Modelling in Physics, Chemistry and Biochemistry master.
+
+The puropose of this project is to develop a serial and pararel version of a Molecular Dynamics simulator of a Lennard-Jones fluid. Therefore, the serial code can be found at the [serial directory](./serial/), and the paralel code at the [paralel directory](./paralel/)
 
 ## Table of contents
 
