@@ -7,7 +7,7 @@ module potential_m
 
 contains
 
-    function calc_pressure(lenth, positions, temp, cutoff) result(press)
+    function calc_pressure(lenth, positions, cutoff, imin, imax, vlist) result(virial)
         implicit none
         ! Author: Marc Alsina <marcalsinac@gmail.com>
         ! Subroutine to compute the pressure applying the virial theorem. 
@@ -21,6 +21,9 @@ contains
         !   positions (REAL64[3,N]): The position's matrix of the system, in reduced units
         !   temp      (REAL64)     : The instant temperature of the system, in reduced units
         !   cutoff    (REAL64)     : The cut-off set to account por pair interactions, in reduced units
+        !   imin      (INT64)      : The minimum index particle
+        !   imax      (INT64)      : The maximum index particle
+        !   vlist     (INT64[:])   : Verlet list for the rank who's processing
 
         ! Returns:
         !   press     (REAL64)     : The instant pressure at a given tempersture and atom's positions
@@ -28,14 +31,16 @@ contains
 
 
         ! In/Out variables
-        real(kind=dp), dimension(:,:), intent(in) :: positions
-        real(kind=dp), intent(in)                 :: lenth, temp, cutoff
-        real(kind=dp)                             :: press
+        real(kind=dp), dimension(:,:), intent(in)   :: positions
+        real(kind=dp), intent(in)                   :: lenth, cutoff
+        real(kind=dp)                               :: press
+        integer(kind=i64), intent(in)               :: imin, imax
+        integer(kind=i64), dimension(:), intent(in) :: vlist 
         ! Internal variables
-        integer(kind=i64)                         :: i_part, j_part, n_p
-        real(kind=dp), dimension(3)               :: fij
-        real(kind=dp), dimension(3,1)             :: rij
-        real(kind=dp)                             :: dij, cutoff2, virial, vol
+        integer(kind=i64)                           :: i_part, j_part, n_p, counter, neigh_idx, nneigh
+        real(kind=dp), dimension(3)                 :: fij
+        real(kind=dp), dimension(3,1)               :: rij
+        real(kind=dp)                               :: dij, cutoff2, virial, vol
 
         press = 0.0_dp
         virial = 0.0_dp
@@ -43,8 +48,15 @@ contains
         n_p = size(positions, dim=2, kind=i64)
         vol = lenth ** 3
 
-        do i_part = 1, n_p - 1
-            do j_part = i_part + 1, n_p
+        counter = 1_i64
+
+        do i_part = imin, imax
+            
+            nneigh = vlist(counter)
+            
+            do neigh_idx = 1, nneigh
+
+                j_part = vlist(counter + neigh_idx)
 
                 ! Calculem rij
                 rij(1,1) = positions(1, i_part) - positions(1, j_part)
@@ -67,12 +79,15 @@ contains
                 end if
 
             end do
+
+            counter = counter + nneigh
+
         end do
         
-        press = (real(n_p, kind=dp)*temp / vol) + ((1.0_dp / (3.0_dp * vol)) * virial)
+        ! press = (real(n_p, kind=dp)*temp / vol) + ((1.0_dp / (3.0_dp * vol)) * virial)
     end function calc_pressure
 
-    pure function calc_KE(vel) result(ke)
+    pure function calc_KE(vel, imin, imax) result(ke)
         implicit none
         ! Author: Marc Alsina <marcalsinac@gmail.com>
         ! Subroutine to compute the kinetick energy
@@ -90,21 +105,22 @@ contains
         ! In/Out variables
         real(kind=DP)                             :: ke
         real(kind=DP), dimension(:,:), intent(in) :: vel
+        integer(kind=i64), intent(in)             :: imin, imax
         ! Internal variables
         integer(kind=I64)                         :: i
 
         ! Variable initialization
         ke = 0.0_DP
         
-        do i = 1, size(vel, dim=2, kind=I64)
+        do i = imin, imax
             ke  = ke + sum(vel(:, i)**2)
         end do
 
         ! Final multiplications
-        ke = ke * 0.5_DP
+        ! ke = ke * 0.5_DP
     end function calc_KE
 
-    function calc_vdw_pbc(pos, cutoff, boundary) result(vdw_calc)
+    function calc_vdw_pbc(pos, cutoff, boundary, imin, imax, vlist) result(vdw_calc)
         implicit none
         ! Author: Marc Alsina <marcalsinac@gmail.com>
         ! Subroutine to compute the potential energy by means of the Lennard-Jones potential
@@ -123,13 +139,15 @@ contains
 
 
         ! In/Out variables
-        real(kind=DP), intent(in), dimension(:, :) :: pos
-        real(kind=DP)                              :: vdw_calc
-        real(kind=DP), intent(in)                  :: cutoff, boundary
+        real(kind=DP), intent(in), dimension(:, :)  :: pos
+        real(kind=DP)                               :: vdw_calc
+        real(kind=DP), intent(in)                   :: cutoff, boundary
+        integer(kind=i64), intent(in)               :: imin, imax
+        integer(kind=i64), dimension(:), intent(in) :: vlist
         ! Internal variables
-        real(kind=DP)                              :: dist, ecalc, cutoff2
-        integer(kind=I64)                          :: i, j, num_particles
-        real(kind=DP), dimension(3,1)              :: rij
+        real(kind=DP)                               :: dist, ecalc, cutoff2
+        integer(kind=I64)                           :: i, j, num_particles, counter, nneigh, neigh_idx
+        real(kind=DP), dimension(3,1)               :: rij
 
         ! Initializing parameters
         vdw_calc = 0.0_DP
@@ -137,8 +155,16 @@ contains
 
         cutoff2 = cutoff ** 2
 
-        do j = 1, num_particles - 1
-            do i = j + 1, num_particles
+        counter = 1_i64
+
+        do j = imin, imax
+
+            nneigh = vlist(counter)
+
+            do neigh_idx = 1, nneigh
+
+                i = vlist(counter + neigh_idx)
+
                 rij(1,1) = pos(1, j) - pos(1, i)
                 rij(2,1) = pos(2, j) - pos(2, i)
                 rij(3,1) = pos(3, j) - pos(3, i)
@@ -157,11 +183,15 @@ contains
                     vdw_calc = vdw_calc + ecalc
                 
                 end if
+
             end do
+
+            counter = counter + nneigh
+
         end do
     end function calc_vdw_pbc
 
-    subroutine calc_vdw_force(pos, cutoff, boundary, forces)
+    subroutine calc_vdw_force(pos, cutoff, boundary, forces, imin, imax, vlist)
         implicit none
         ! Author: Marc Alsina <marcalsinac@gmail.com>
         ! Subroutine to compute the force acting on each particel by means of the Lennard-Jones 
@@ -183,8 +213,10 @@ contains
         real(kind=DP), intent(in), dimension(:, :)    :: pos
         real(kind=DP), intent(in)                     :: cutoff, boundary
         real(kind=DP), intent(out), dimension(:, :)   :: forces
+        integer(kind=i64), intent(in)                 :: imin, imax
+        integer(kind=i64), dimension(:), intent(in)   :: vlist
         ! Internal variables
-        integer(kind=I64)             :: n_part, i, j
+        integer(kind=I64)             :: n_part, i, j, counter, neigh_idx, nneigh
         real(kind=DP)                 :: dist, cutoff2
         real(kind=DP), dimension(3,1) :: rij
 
@@ -194,9 +226,15 @@ contains
         rij = 0.0_dp
         cutoff2 = cutoff * cutoff
 
-        do i = 1, n_part - 1
-            do j = i + 1, n_part
-                ! print*, rij
+        counter = 1_i64
+
+        do i = imin, imax
+
+            nneigh = vlist(counter)
+
+            do neigh_idx = 1, nneigh
+
+                j = vlist(counter + neigh_idx)
                 
                 rij(1,1) = pos(1, i) - pos(1, j)
                 rij(2,1) = pos(2, i) - pos(2, j)
@@ -220,10 +258,13 @@ contains
 
                 end if
             end do
+
+            counter = counter + nneigh
+
         end do
     end subroutine calc_vdw_force
 
-    pure subroutine compute_com_momenta(vel, com_momenta)
+    pure subroutine compute_com_momenta(vel, com_momenta, imin, imax)
         implicit none
         ! Author: Marc Alsina <marcalsinac@gmail.com>
         ! Subroutine to compute the center of mass momenta, in reduced units
@@ -238,38 +279,102 @@ contains
         ! In/Out variables
         real(kind=DP), dimension(:, :), intent(in) :: vel
         real(kind=DP), dimension(3), intent(out)   :: com_momenta
+        integer(kind=i64), intent(in)              :: imin, imax
         ! Internal variables
         integer(kind=I64)                          :: i_aux, n_p
 
         com_momenta = 0.0_DP
         n_p = size(vel, dim=2, kind=I64)
 
-        do i_aux = 1, n_p
+        do i_aux = imin, imax
             com_momenta(:) = com_momenta(:) + vel(:, i_aux)
         end do
 
     end subroutine compute_com_momenta
 
     pure function calc_Tinst(ke, np) result(tinst)
-    implicit none
-    ! Author: Marc Alsina <marcalsinac@gmail.com>
-    ! Subroutine to compute the instantaneous temperature
-    !
-    ! Args:
-    !   ke (REAL64): instant kinetic energy
-    !   np (INT64) : Number of particles in the system
-    !
-    ! Returns:
-    !   tinst (REAL64): Instant temperature
+        implicit none
+        ! Author: Marc Alsina <marcalsinac@gmail.com>
+        ! Subroutine to compute the instantaneous temperature
+        !
+        ! Args:
+        !   ke (REAL64): instant kinetic energy
+        !   np (INT64) : Number of particles in the system
+        !
+        ! Returns:
+        !   tinst (REAL64): Instant temperature
 
-    
-    ! In/Out variables
-    real(kind=dp), intent(in)     :: ke
-    integer(kind=i64), intent(in) :: np
-    real(kind=dp)                 :: tinst
+        
+        ! In/Out variables
+        real(kind=dp), intent(in)     :: ke
+        integer(kind=i64), intent(in) :: np
+        real(kind=dp)                 :: tinst
 
-    tinst = (2.0_DP / (3.0_DP * real(np, kind=dp))) * ke
+        tinst = (2.0_DP / (3.0_DP * real(np, kind=dp))) * ke
 
     end function calc_Tinst
+
+    subroutine compute_vlist(L, r, cutoffv, imin, imax, vlist)
+        ! Author: Marc Alsina <marcalsinac@gmail.com>
+        ! Subroutine that computes the verlet list pertaining for each rank
+        !
+        ! Subroutine that computes the verlet list pertaining to each rank, 
+        ! bounded by the particle range imin-imax.
+        ! The update of the verlet list can be set at each n timesteps, or when the 
+        ! outermost 
+        !
+        ! Args:
+        !   r       (REAL64[3,N]) : Particle's positions
+        !   cutoffv (REAL64)      : Verlet cuttof 
+        !   imin    (INT64)       : Minimum index particle to compute
+        !   imax    (INT64)       : Maximum index particle to compute
+        !
+        ! Returns:
+        !   vlist   (INT64[:])    : Verlet list
+
+
+        implicit none
+        ! In/Out variables
+        real(kind=dp), dimension(:,:), intent(in)    :: r
+        real(kind=dp), intent(in)                    :: cutoffv, L
+        integer(kind=i64), intent(in)                :: imin, imax
+        integer(kind=i64), dimension(:), intent(out) :: vlist
+        ! Internal variables
+        integer(kind=i64)                            :: np, i, j, nneigh, pos
+        real(kind=dp), dimension(1, 3)                  :: rij
+        real(kind=dp)                                :: dist2, cutoff2
+
+        np = size(r, dim=2, kind=i64)
+        cutoff2 = cutoffv * cutoffv
+
+        pos = 1
+
+        do i = imin, imax
+
+            nneigh = 0
+
+            do j = 1, np
+
+                if (i == j) cycle
+
+                rij(1, :) = r(:, i) - r(:, j)
+
+                call pbc(rij, L)
+
+                dist2 = rij(1, 1)**2 + rij(1, 2)**2 + rij(1, 3)**2
+
+                if (dist2 <= cutoff2) then
+                    nneigh = nneigh + 1
+                    vlist(pos + nneigh) = j
+                end if
+
+            end do
+
+            vlist(pos) = nneigh
+            pos = pos + nneigh + 1_i64
+
+        end do
+
+    end subroutine compute_vlist
 
 end module potential_m
