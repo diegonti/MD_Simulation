@@ -2,7 +2,7 @@
 ! Particle related variables
   lj_epsilon = 1.77,   ! [kJ/mol]
   lj_sigma = 4.10,     ! [Ang]
-  mass = 131.29,         ! [g/mol]
+  mass = 131.29,       ! [g/mol]
 
   ! Simulation related variables
   n_steps = 50000               ! Number of simulation steps

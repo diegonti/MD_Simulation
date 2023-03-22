@@ -5,6 +5,7 @@ module initialization
     ! 2 types of initial velocities are implemented -> bimodal, zero.
 
     use, intrinsic :: iso_fortran_env, only: DP => real64, I64 => int64, input_unit, output_unit
+    use mpi
     contains
 
     subroutine getInitialParams(cell,N,density,M,L,a)
@@ -70,25 +71,89 @@ module initialization
 
     end subroutine changeIUnits
 
-   
-    subroutine initializePositions(M,a,r,cell)
+    
+    subroutine divide_positions(taskid,numproc,N, sendcounts,displs, imin,imax,local_N)
+        ! Divides the whole system by particles and their indices, into chunks of N/numproc atoms. 
+        ! It creates also the sendcounts and displs vectors (needed for different MPI subroutines),
+        ! which contain the local_N of each process (number of atoms per rank), and the displacements
+        ! for each process (the imin for each rank), respectively, from which the imin and imax can be derived. 
+        ! Each process will look at the imin_th to the imax_th particle of the full matrix.
+        ! 
+        ! Args:
+        !   taskid    (INT)   : Index of the process (given by MPI_RANK())
+        !   numproc   (INT)   : Number of cores (processors) used.
+        !   N         (INT64) : Number of particles in the system.
+        !
+        ! Inout:
+        !   sendcounts    (INT[numproc]) : Array containing the number of particles (local_N) of each process (index).
+        !   displs        (INT[numproc]) : Array containing the index of the first particle of each process (imin).
+        !
+        ! Returns:
+        !   imin    (INT64) : Index of the first particle of each process.
+        !   imax    (INT64) : Index of the last particle of each process.
+        !   local_N (INT64) : Number of particles that each process has. 
+
+        implicit none
+        integer(kind=i64), intent(in) :: N
+        integer, intent(in) :: taskid,numproc
+        integer, dimension(:), allocatable,intent(inout):: sendcounts,displs
+        integer(kind=i64), intent(out) :: imin,imax,local_N
+        integer :: chunk,chunk_extra, k,i
+
+
+        chunk = int(N)/numproc                  ! Number of particles per task (N/numproc) (int)
+        chunk_extra = mod(int(N),numproc)       ! Extra particles if division is not exact 
+
+        ! Fills the sendcounts and displs vectors (needed for different MPI subroutines)
+        k = 0
+        do I = 1, numproc
+            ! The extra particles (if any) will go to the first counts
+            if (I < chunk_extra+1) then
+                sendcounts(I) = chunk + 1
+            else
+                sendcounts(I) = chunk
+            end if
+            displs(I) = k
+            k = k + sendcounts(I)
+        end do
+
+        local_N = int(sendcounts(taskid+1),kind=i64)
+        imin = int(displs(taskid+1),kind=i64) + 1_i64
+        imax = imin + local_N - 1_i64
+
+        ! print*,imin,imax
+        ! if (taskid==0) then
+        !     print*,displs
+        !     print*,sendcounts
+        ! end if
+        
+    end subroutine divide_positions
+
+
+    subroutine initializePositions(M,a,r,cell,imin,imax,sendcounts,displs)
         ! Chooses and runs the specified initial position.
         ! For the given cell, selects the unit cell matrix and initializes the positions.
         !
         ! Args:
-        !   M       (INT64)       : Number of cells in one direction.
-        !   a       (REAL64)      : Lattice parameter of the unit cell (L/M)
-        !   cell    (CHARACTER)   : String with the name of the cell (sc, bcc, fcc).
+        !   M           (INT64)        : Number of cells in one direction.
+        !   a           (REAL64)       : Lattice parameter of the unit cell (L/M)
+        !   cell        (CHARACTER)    : String with the name of the cell (sc, bcc, fcc).
+        !   imin        (INT64)        : Index of the first particle of each process.
+        !   imax        (INT64)        : Index of the last particle of each process.
+        !   sendcounts  (INT[numproc]) : Array containing the number of particles (local_N) of each process (index).
+        !   displs      (INT[numproc]) : Array containing the index of the first particle of each process (imin).
         !
         ! Inout:
         !   r       (REAL64[3,N]) : 3xN Positions matrix.  
 
         implicit none
-        integer(kind=i64), intent(in) :: M
+        integer(kind=i64), intent(in) :: M, imin,imax
         double precision, intent(in) :: a
         character(*), intent(in) :: cell
-        double precision, intent(inout),dimension(:,:) :: r
+        integer, dimension(:), intent(in):: sendcounts,displs
+        double precision, intent(inout), dimension(:,:) :: r
         double precision, allocatable, dimension(:,:) :: ucell
+
 
         if ((index(cell,"fcc")==1) .OR. (index(cell,"FCC")==1))  then
             allocate(ucell(3,4))
@@ -103,7 +168,7 @@ module initialization
             print*, "Select a valid initial position: sc, bcc, fcc."
         end if
 
-        call initializeGeneral(M,a,ucell,r)     ! Creaties position matrix with the selected unit cell
+        call initializeGeneral(M,a,ucell,r, imin,imax,sendcounts,displs)     ! Creaties position matrix with the selected unit cell
 
         deallocate(ucell)
 
@@ -135,39 +200,55 @@ module initialization
     end subroutine initializeVelocities
 
 
-
-    subroutine initializeGeneral(M,a,ucell,r)
+    subroutine initializeGeneral(M,a,ucell,r, imin,imax,sendcounts,displs)
         ! Initializes the position matrix for a given unit cell.
+        ! It does this by replicating the unit cell in all 3 dimensions.
         !
         ! Args:
-        !   M       (INT64)       : Number of cells in one direction.
-        !   a       (REAL64)      : Lattice parameter of the unit cell (L/M).
-        !   ucell   (REAL[:,:])   : Matrix with the unit cell atom's positions.
+        !   M           (INT64)        : Number of cells in one direction.
+        !   a           (REAL64)       : Lattice parameter of the unit cell (L/M).
+        !   ucell       (REAL[:,:])    : Matrix with the unit cell atom's positions.
+        !   imin        (INT64)        : Index of the first particle of each process.
+        !   imax        (INT64)        : Index of the last particle of each process.
+        !   sendcounts  (INT[numproc]) : Array containing the number of particles (local_N) of each process (index).
+        !   displs      (INT[numproc]) : Array containing the index of the first particle of each process (imin).
         !
         ! Inout:
         !   r       (REAL64[3,N]) : 3xN Positions matrix.   
             
         implicit none
-        integer(kind=i64), intent(in) :: M
+        integer(kind=i64), intent(in) :: M, imin, imax
         double precision, intent(in) :: a
         double precision, dimension(:,:), intent(in) :: ucell
+        integer, dimension(:), intent(in):: sendcounts,displs
         double precision, intent(inout), dimension(:,:) :: r
-        integer(kind=i64) :: i,j,k, p,at
+        integer(kind=i64) :: i,j,k,d, p,at,f, local_N
+        integer :: ierror
 
-        p = 1_i64
-        do i=0,M-1_i64
-            do j=0,M-1_i64
-                do k=0,M-1_i64
-                    do at=1,size(ucell, dim=2,kind=i64)
-                        r(:, p) = ucell(:,at) + (/real(i,kind=dp),real(j,kind=dp),real(k,kind=dp)/)
-                        !p = at + (k+(j+i*M)*M)*size(ucell, dim=2, kind=i64) 
-                        p = p + 1_i64 
-                    end do
-                end do
-            end do
+        r = 0
+        local_N = imax - imin + 1_i64
+
+        f = size(ucell, dim=2,kind=i64)     ! Number of whole atoms in a unit cell
+
+        do p=imin,imax
+            at = mod(p-1,f) + 1                         ! Current unit cell atom index
+            k = mod((p-at)/f,M)                         ! Current Z displacement (in unit cells)
+            j = mod(((p-at)/f-k)/M,M)                   ! Current Y displacement (in unit cells)
+            i = int((((p-at)/f-k)/M - j)/M,kind=i64)    ! Current X displacement (in unit cells)
+            ! The p atom position will be the unit cell one displacez by i,j,k units
+            r(:, p) = ucell(:,at) + (/real(i,kind=dp),real(j,kind=dp),real(k,kind=dp)/)
         end do
-        r = r*a
         
+        r(:,imin:imax) = r(:,imin:imax)*a           ! Rescaling the cells with the unit cell latice lenght
+        
+        ! r(:,imin:imax) = r(:,imin:imax) - L/2     ! Moving particles to have a (0,0,0) centered box
+
+        ! Combine and update all positions matrix for each worker
+        do d=1,3
+            call MPI_ALLGATHERV(r(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, r(d,:), sendcounts, displs, &
+                    MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
+        end do
+
     end subroutine initializeGeneral
 
 
