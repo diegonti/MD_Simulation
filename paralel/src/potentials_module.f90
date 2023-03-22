@@ -314,7 +314,7 @@ contains
 
     end function calc_Tinst
 
-    subroutine compute_vlist(r, cutoffv, imin, imax, vlist)
+    subroutine compute_vlist(L, r, cutoffv, imin, imax, vlist)
         ! Author: Marc Alsina <marcalsinac@gmail.com>
         ! Subroutine that computes the verlet list pertaining for each rank
         !
@@ -336,12 +336,12 @@ contains
         implicit none
         ! In/Out variables
         real(kind=dp), dimension(:,:), intent(in)    :: r
-        real(kind=dp), intent(in)                    :: cutoffv
+        real(kind=dp), intent(in)                    :: cutoffv, L
         integer(kind=i64), intent(in)                :: imin, imax
         integer(kind=i64), dimension(:), intent(out) :: vlist
         ! Internal variables
         integer(kind=i64)                            :: np, i, j, nneigh, pos
-        real(kind=dp), dimension(3)                  :: rij
+        real(kind=dp), dimension(1, 3)                  :: rij
         real(kind=dp)                                :: dist2, cutoff2
 
         np = size(r, dim=2, kind=i64)
@@ -357,9 +357,11 @@ contains
 
                 if (i == j) cycle
 
-                rij(:) = r(:, i) - r(:, j)
+                rij(1, :) = r(:, i) - r(:, j)
 
-                dist2 = rij(1)**2 + rij(2)**2 + rij(3)**2
+                call pbc(rij, L)
+
+                dist2 = rij(1, 1)**2 + rij(1, 2)**2 + rij(1, 3)**2
 
                 if (dist2 <= cutoff2) then
                     nneigh = nneigh + 1
