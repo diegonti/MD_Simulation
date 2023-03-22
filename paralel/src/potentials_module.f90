@@ -7,7 +7,7 @@ module potential_m
 
 contains
 
-    function calc_pressure(lenth, positions, temp, cutoff, imin, imax, vlist) result(press)
+    function calc_pressure(lenth, positions, cutoff, imin, imax, vlist) result(virial)
         implicit none
         ! Author: Marc Alsina <marcalsinac@gmail.com>
         ! Subroutine to compute the pressure applying the virial theorem. 
@@ -32,12 +32,12 @@ contains
 
         ! In/Out variables
         real(kind=dp), dimension(:,:), intent(in)   :: positions
-        real(kind=dp), intent(in)                   :: lenth, temp, cutoff
+        real(kind=dp), intent(in)                   :: lenth, cutoff
         real(kind=dp)                               :: press
         integer(kind=i64), intent(in)               :: imin, imax
         integer(kind=i64), dimension(:), intent(in) :: vlist 
         ! Internal variables
-        integer(kind=i64)                           :: i_part, j_part, n_p, counter, neigh_idx
+        integer(kind=i64)                           :: i_part, j_part, n_p, counter, neigh_idx, nneigh
         real(kind=dp), dimension(3)                 :: fij
         real(kind=dp), dimension(3,1)               :: rij
         real(kind=dp)                               :: dij, cutoff2, virial, vol
@@ -54,7 +54,7 @@ contains
             
             nneigh = vlist(counter)
             
-            do neig_idx = 1, nneigh
+            do neigh_idx = 1, nneigh
 
                 j_part = vlist(counter + neigh_idx)
 
@@ -84,7 +84,7 @@ contains
 
         end do
         
-        press = (real(n_p, kind=dp)*temp / vol) + ((1.0_dp / (3.0_dp * vol)) * virial)
+        ! press = (real(n_p, kind=dp)*temp / vol) + ((1.0_dp / (3.0_dp * vol)) * virial)
     end function calc_pressure
 
     pure function calc_KE(vel, imin, imax) result(ke)
@@ -117,7 +117,7 @@ contains
         end do
 
         ! Final multiplications
-        ke = ke * 0.5_DP
+        ! ke = ke * 0.5_DP
     end function calc_KE
 
     function calc_vdw_pbc(pos, cutoff, boundary, imin, imax, vlist) result(vdw_calc)
@@ -146,7 +146,7 @@ contains
         integer(kind=i64), dimension(:), intent(in) :: vlist
         ! Internal variables
         real(kind=DP)                               :: dist, ecalc, cutoff2
-        integer(kind=I64)                           :: i, j, num_particles
+        integer(kind=I64)                           :: i, j, num_particles, counter, nneigh, neigh_idx
         real(kind=DP), dimension(3,1)               :: rij
 
         ! Initializing parameters
@@ -161,7 +161,7 @@ contains
 
             nneigh = vlist(counter)
 
-            do neig_idx = 1, nneigh
+            do neigh_idx = 1, nneigh
 
                 i = vlist(counter + neigh_idx)
 
@@ -216,7 +216,7 @@ contains
         integer(kind=i64), intent(in)                 :: imin, imax
         integer(kind=i64), dimension(:), intent(in)   :: vlist
         ! Internal variables
-        integer(kind=I64)             :: n_part, i, j
+        integer(kind=I64)             :: n_part, i, j, counter, neigh_idx, nneigh
         real(kind=DP)                 :: dist, cutoff2
         real(kind=DP), dimension(3,1) :: rij
 
@@ -319,7 +319,9 @@ contains
         ! Subroutine that computes the verlet list pertaining for each rank
         !
         ! Subroutine that computes the verlet list pertaining to each rank, 
-        ! bounded by the particle range imin-imax
+        ! bounded by the particle range imin-imax.
+        ! The update of the verlet list can be set at each n timesteps, or when the 
+        ! outermost 
         !
         ! Args:
         !   r       (REAL64[3,N]) : Particle's positions
