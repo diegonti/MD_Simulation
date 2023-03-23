@@ -2,7 +2,8 @@ program main
     use, intrinsic :: iso_fortran_env, only: DP => real64, I64 => int64, i32 => int32, input_unit, output_unit, error_unit
     ! Module definitions
     use            :: mpi
-    use            :: initialization, only: changeIUnits, getInitialParams, initializePositions, initializeVelocities
+    use            :: initialization, only: changeIUnits, getInitialParams, initializePositions, initializeVelocities, &
+                                            divide_positions
     use            :: testing
     use            :: readers_m,      only: read_nml
     use            :: integrators,    only: mainLoop
@@ -27,8 +28,10 @@ program main
     character(len=2048) :: cell_type, init_vel
 
     ! MPI memory definition
-    integer             :: taskid, ierror, numproc, request
-    integer, parameter  :: MASTER = 0
+    integer, parameter      :: MASTER = 0
+    integer                 :: taskid, ierror, numproc, request
+    integer(kind=i64)       :: imin, imax, local_N
+    integer,  allocatable, dimension(:) :: sendcounts, displs
 
 
     !!! ~ MAIN PROGRAM ~ !!!
@@ -89,28 +92,37 @@ program main
     ! ~ Memmory allocation ~
     allocate(r(3,N))
     allocate(v(3,N))
+    allocate(sendcounts(numproc))
+    allocate(displs(numproc))
 
     ! ~ Initialization of the system ~
     call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
     call getInitialParams(trim(cell_type),N,density,M,L,a)
-    call initializePositions(M,a,r,trim(cell_type))
+
+    call divide_positions(taskid,numproc,N, sendcounts,displs,imin,imax,local_N)
+    call initializePositions(M,a,r,trim(cell_type),imin,imax,sendcounts,displs)
+
     call initializeVelocities(T,v,init_vel)
+
 
     ! ~ Starting the trajectory of the system ~
     call mainLoop(log_unit, traj_unit, rdf_unit, lj_epsilon, lj_sigma, mass, &
     n_steps, dt, L, T, andersen_nu, 0.5_dp*L, gdr_num_bins, r, v, write_stats, write_frame)    
 
+
     ! ~ Memmory deallocation ~
     deallocate(r)
     deallocate(v)
+    deallocate(sendcounts)
+    deallocate(displs)
 
     if (taskid == MASTER) then
 
-        ! ~ Closing files ~
+        ! ~ Closing files ~ 
         close(log_unit)
         close(traj_unit)
         close(rdf_unit)
-    
+
         ! ~ Program finalization ~
         end_time = MPI_Wtime()
         write(output_unit,'(A)') ''
