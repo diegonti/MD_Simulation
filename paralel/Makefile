@@ -51,7 +51,7 @@ integrators.o: integrators.f90
 
 
 ## run_parallel: Runs in parallel the simulaion executable with the parameters file.
-.PHONY: run_serial
+.PHONY: run_parallel
 run_parallel:
 	mpirun -np $(nproc) MDEMI.x parameters.nml
 ##
