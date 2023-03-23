@@ -117,7 +117,7 @@ program main
 
     if (taskid == MASTER) then
 
-        ! ~ Closing files ~git 
+        ! ~ Closing files ~ 
         close(log_unit)
         close(traj_unit)
         close(rdf_unit)
