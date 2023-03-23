@@ -50,6 +50,12 @@ integrators.o: integrators.f90
 	$(FC) $(F_FLAGS) $(COMP_D_FLAGS) $(COMP_R_FLAGS) -c $^
 
 
+## run_parallel: Runs in parallel the simulaion executable with the parameters file.
+.PHONY: run_serial
+run_parallel:
+	mpirun -np $(nproc) MDEMI.x parameters.nml
+##
+
 ## run_serial: Runs sequantially the simulaion executable with the parameters file.
 .PHONY: run_serial
 run_serial:
