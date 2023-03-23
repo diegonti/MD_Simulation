@@ -2,7 +2,8 @@ program main
     use, intrinsic :: iso_fortran_env, only: DP => real64, I64 => int64, i32 => int32, input_unit, output_unit, error_unit
     ! Module definitions
     use            :: mpi
-    use            :: initialization, only: changeIUnits, getInitialParams, initializePositions, initializeVelocities
+    use            :: initialization, only: changeIUnits, getInitialParams, initializePositions, initializeVelocities, &
+                                            divide_positions
     use            :: testing
     use            :: readers_m,      only: read_nml
     use            :: integrators,    only: mainLoop
