@@ -1,10 +1,11 @@
 module integrators
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64, output_unit
-    use periodic_bc, only: PBC
-    use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst, compute_com_momenta
-    use simulation,  only: MSD, g_r
-    use writers_m,   only: writePositions, writeRdf, writeSystem
-    use testing
+    use            :: mpi
+    use :: periodic_bc, only: PBC
+    use :: potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst, compute_com_momenta, compute_vlist
+    use :: simulation,  only: MSD, g_r
+    use :: writers_m,   only: writePositions, writeRdf, writeSystem
+    use :: testing
 
     implicit none
     public :: verlet_step, vv_integrator,vel_andersen
@@ -13,7 +14,7 @@ module integrators
 contains
 
     subroutine mainLoop(log_unit,traj_unit,rdf_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,gdr_num_bins,r,v, &
-        write_log, write_pos)
+        write_log, write_pos, irank, imin, imax)
         ! Main Simulation Loop
         !
         ! Args:
@@ -33,7 +34,8 @@ contains
         !    v      (REAL64[3,N]) : velocities of all N partciles, in reduced units.
 
         implicit none
-        integer(kind=i64), intent(in)                :: log_unit,traj_unit,rdf_unit, N_steps, gdr_num_bins, write_log, write_pos
+        integer(kind=i64), intent(in)                :: log_unit,traj_unit,rdf_unit, N_steps, gdr_num_bins, write_log, write_pos,& 
+        irank, imin, imax
         real(kind=dp), intent(in)                    :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt
         real(kind=dp), dimension(:,:), intent(inout) :: r,v
 
@@ -41,7 +43,10 @@ contains
         real(kind=dp)                                :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t, dr
         real(kind=dp), dimension(3)                  :: p_com
         real(kind=dp), dimension(:,:), allocatable   :: gdr
-        integer(kind=i64) :: i,N
+        integer(kind=i64), dimension(:), allocatable :: vlist
+        integer(kind=i64)                            :: i,N
+        real(kind=dp)                                :: local_Ekin, local_Epot, local_press, local_p_com_t, local_virial, virial
+        integer                                      :: ierror
 
         dr = cutoff/dble(gdr_num_bins)
         N = size(r,dim=2,kind=i64)
@@ -51,18 +56,24 @@ contains
         allocate(rnew(3,N))
         allocate(F(3,N))
         allocate(gdr(2,gdr_num_bins))
-
+        allocate(vlist(N**2))
 
         F = 0.0_dp
         rold = r
         r = r - (L / 2.0_dp)
-        r0 = r  ! Saving initial configuration (for MSD)
+        r0(:,:) = r(:,:)  ! Saving initial configuration (for MSD)
+
+        call compute_vlist(L, r, 1.1_DP*cutoff, imin, imax, vlist)
 
         call g_r(gdr, r, 1_i64, gdr_num_bins, L, cutoff)
 
-        write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  MSD Pt"
-        write(output_unit,"(a)",advance='no') "Completed (%): "
-        do i=1,N_steps
+        if (irank == 0) then
+            write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  MSD Pt"
+            write(output_unit,"(a)",advance='no') "Completed (%): "
+        end if
+            
+        do i = 1, N_steps
+            
             time = real(i, kind=dp)*dt
             !choose integrator depending on user?
             ! call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
@@ -70,25 +81,51 @@ contains
             ! call euler()
             call vel_Andersen(v,nu,T)
 
-            Epot = calc_vdw_pbc(r,cutoff,L)
-            Ekin = calc_KE(v)
-            Etot = Epot + Ekin
-            Tinst =  calc_Tinst(Ekin,N)
-            press =  calc_pressure(L, r, Tinst, cutoff)
-            call compute_com_momenta(v,p_com)
-            p_com_t = dsqrt(dot_product(p_com,p_com))
-
             rMSD = MSD(r,r0,L)
             call g_r(gdr, r, 2_i64, gdr_num_bins, L, cutoff)
             
             ! r = rnew
 
-            if (mod(i, write_log) == 0) call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,&
-            press,rMSD,p_com_t)
-            if (mod(i, write_pos) == 0)  call writePositions(r, traj_unit)
+            if (mod(i, write_log) == 0) then
+                
+                ! Computation of local variables
+                local_Ekin = calc_KE(v, imin, imax)
+                local_Epot = calc_vdw_pbc(r, cutoff, L, imin, imax, vlist)
+                local_virial = calc_pressure(L, r, cutoff, imin, imax, vlist)
+                call compute_com_momenta(v, p_com, imin, imax)
+                local_p_com_t = dsqrt(dot_product(p_com,p_com))
+
+
+                call MPI_Reduce(local_Ekin, Ekin, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+                call MPI_Reduce(local_Epot, Epot, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+                call MPI_Reduce(local_virial, virial, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+                call MPI_Reduce(local_p_com_t, p_com_t, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+
+                if (irank == 0) then
+
+                    Ekin = Ekin * 0.5_DP
+
+                    Etot = Epot + Ekin
+                    Tinst = calc_Tinst(Ekin,N)
+                    press = (real(N, kind=dp)*Tinst / (L**3)) + ((1.0_dp / (3.0_dp * (L**3))) * virial)
+                    
+                    call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,&
+                    press,rMSD,p_com_t)
+
+                end if
+            end if
+            
+            if (mod(i, write_pos) == 0) then 
+                if (irank == 0) call writePositions(r, traj_unit)
+            end if
 
             if (mod(i, N_steps/10) == 0) then
-                write(output_unit, '(1x,i0)', advance='no') (100*i)/N_steps
+                if (irank == 0) write(output_unit, '(1x,i0)', advance='no') (100*i)/N_steps
+            end if
+
+            if (mod(i, 20_I64) == 0_I64) then
+                !TODO search a more elegant way to update the Verlet List.
+                call compute_vlist(L, r, 1.1_DP*cutoff, imin, imax, vlist)
             end if
 
         end do
@@ -101,7 +138,7 @@ contains
         deallocate(rold)
         deallocate(rnew)
         deallocate(F)
-
+        deallocate(vlist)
 
     end subroutine mainLoop
 
