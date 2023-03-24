@@ -101,6 +101,7 @@ program main
     call MPI_Bcast(dt, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(density, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(andersen_nu, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(T, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
 
     ! CHARACTER broadcasting
     !call MPI_Bcast(cell_type, 1, MPI_CHAR, MASTER, MPI_COMM_WORLD, ierror)
