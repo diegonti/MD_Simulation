@@ -71,17 +71,8 @@ contains
 
         if (irank == 0) then
             write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  MSD Pt"
-            ! write(output_unit,"(a)",advance='no') "Completed (%): "
+            !write(output_unit,"(a)",advance='no') "Completed (%): "
         end if
-
-        if (irank == 1) then
-            print *, dt, T, nu
-        !    do d = 1, size(vlist)
-        !        print *, vlist(d)
-        !    end do
-        end if
-
-        print *, irank, imin, imax
 
         call MPI_Barrier(MPI_COMM_WORLD, ierror)
 
@@ -133,9 +124,9 @@ contains
                 if (irank == 0) call writePositions(r, traj_unit)
             end if
 
-            !if (mod(i, N_steps/10) == 0) then
-            !    if (irank == 0) write(output_unit, '(1x,i0)', advance='no') (100*i)/N_steps
-            !end if
+            if (mod(i, N_steps/10) == 0) then
+                if (irank == 0) write(output_unit, '(1x,i0)', advance='no') (100*i)/N_steps
+            end if
 
             if (mod(i, 2_I64) == 0_I64) then
                 !TODO search a more elegant way to update the Verlet List.
@@ -151,11 +142,6 @@ contains
                 call MPI_ALLGATHERV(v(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, v(d,:), sendcounts, displs, &
                 MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
             end do
-
-            !print *, "v(:,1)=  ", v(:, 1)
-            !print *, "v(:,64)= ", v(:,64)
-
-
 
         end do
 
