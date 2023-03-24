@@ -128,9 +128,13 @@ contains
                 if (irank == 0) write(output_unit, '(1x,i0)', advance='no') (100*i)/N_steps
             end if
 
-            if (mod(i, 2_I64) == 0_I64) then
+            if (mod(i, 10_I64) == 0_I64) then
                 !TODO search a more elegant way to update the Verlet List.
-                call compute_vlist(L, r, 1.1_DP*cutoff, imin, imax, vlist)
+                write(output_unit, '(A,I2,A)') 'Worker ', irank, ' updating verlet list'
+                call compute_vlist(L, r, 1.05_DP*cutoff, imin, imax, vlist)
+                write(output_unit, '(A,I2,A,F12.8)') 'Worker ', irank, ' mean number of neighbours per atom: ', &
+                real(count(vlist > 0_I64) - local_N, kind=dp) / real(local_N, kind=dp)
+                call MPI_Barrier(MPI_COMM_WORLD, ierror)
             end if
 
             call MPI_Barrier(MPI_COMM_WORLD, ierror)
