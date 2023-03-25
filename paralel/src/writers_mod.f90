@@ -43,7 +43,7 @@ module writers_m
         Ekin_out = Ekin * ru_E
         T_out = T * ru_temp
         press_out = press * ru_press
-        MSD_out = MSD * ru_dist**2_i64
+        MSD_out = 0.0_dp !MSD * ru_dist**2_i64
         momentum_out = momentum * ru_mom
 
         ! Writes to output file (coumun style)
