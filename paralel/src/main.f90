@@ -118,7 +118,7 @@ program main
     call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
 
     cell_type = 'sc'
-    init_vel = 'zero'
+    init_vel = 'bimodal'
     call getInitialParams(trim(cell_type),N,density,M,L,a)
 
     call divide_positions(taskid,numproc,N, sendcounts,displs,imin,imax,local_N)
