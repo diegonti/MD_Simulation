@@ -108,6 +108,7 @@ contains
                 if (irank == 0) then
 
                     Ekin = Ekin * 0.5_DP
+                    Epot = Epot * 0.5_DP  ! To account for the double countiung because of verlet lists
 
                     Etot = Epot + Ekin
                     Tinst = calc_Tinst(Ekin,N)
@@ -118,7 +119,7 @@ contains
 
                 end if
             end if
-            call MPI_Barrier(MPI_COMM_WORLD, ierror)
+            ! call MPI_Barrier(MPI_COMM_WORLD, ierror)
             
             if (mod(i, write_pos) == 0) then 
                 if (irank == 0) call writePositions(r, traj_unit)
@@ -130,10 +131,10 @@ contains
 
             if (mod(i, 10_I64) == 0_I64) then
                 !TODO search a more elegant way to update the Verlet List.
-                write(output_unit, '(A,I2,A)') 'Worker ', irank, ' updating verlet list'
+                ! write(output_unit, '(A,I2,A)') 'Worker ', irank, ' updating verlet list'
                 call compute_vlist(L, r, 1.05_DP*cutoff, imin, imax, vlist)
-                write(output_unit, '(A,I2,A,F12.8)') 'Worker ', irank, ' mean number of neighbours per atom: ', &
-                real(count(vlist > 0_I64) - local_N, kind=dp) / real(local_N, kind=dp)
+                !write(output_unit, '(A,I2,A,F12.8)') 'Worker ', irank, ' mean number of neighbours per atom: ', &
+                !real(count(vlist > 0_I64) - local_N, kind=dp) / real(local_N, kind=dp)
                 call MPI_Barrier(MPI_COMM_WORLD, ierror)
             end if
 
