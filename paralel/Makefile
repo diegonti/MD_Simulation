@@ -51,6 +51,7 @@ integrators.o: integrators.f90
 
 
 ## run_parallel: Runs in parallel the simulaion executable with the parameters file.
+##  use by declaring nproc to the number of cores to be used. E.g: make run_parallel nproc=4.
 .PHONY: run_parallel
 run_parallel:
 	mpirun -np $(nproc) MDEMI.x parameters.nml
