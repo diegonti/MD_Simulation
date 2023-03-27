@@ -104,8 +104,8 @@ program main
     call MPI_Bcast(T, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     
     ! CHARACTER broadcasting
-    !call MPI_Bcast(cell_type, 1, MPI_CHAR, MASTER, MPI_COMM_WORLD, ierror)
-    !call MPI_Bcast(init_vel, 1, MPI_CHAR, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(cell_type, 2048, MPI_CHARACTER, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(init_vel, 2048, MPI_CHARACTER, MASTER, MPI_COMM_WORLD, ierror)
 
     ! ~ Memmory allocation ~
     allocate(r(3,N))
@@ -116,8 +116,8 @@ program main
     ! ~ Initialization of the system ~
     call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
 
-    cell_type = 'sc'
-    init_vel = 'bimodal'
+    !cell_type = 'sc'
+    !init_vel = 'bimodal'
     call getInitialParams(trim(cell_type),N,density,M,L,a)
 
     call divide_positions(taskid,numproc,N, sendcounts,displs,imin,imax,local_N)
