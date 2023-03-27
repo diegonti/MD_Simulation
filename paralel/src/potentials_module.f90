@@ -3,7 +3,7 @@ module potential_m
     use            :: periodic_bc,     only: pbc
     implicit none
 
-    public :: calc_pressure, calc_KE, calc_vdw_pbc, calc_vdw_force
+    public :: calc_pressure, calc_KE, calc_vdw_pbc, calc_vdw_force, update_vlist
 
 contains
 
@@ -389,7 +389,7 @@ contains
         !   update       (LOGICAL)    : Update or not the verlet list
         implicit none
         ! In/Out variables
-        real(kind=dp), dimension(3, :), intent(in) :: displacement
+        real(kind=dp), dimension(:, :), intent(in) :: displacement
         real(kind=dp), intent(in)                  :: rmax
         logical                                    :: update
 
