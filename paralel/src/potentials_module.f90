@@ -3,7 +3,7 @@ module potential_m
     use            :: periodic_bc,     only: pbc
     implicit none
 
-    public :: calc_pressure, calc_KE, calc_vdw_pbc, calc_vdw_force
+    public :: calc_pressure, calc_KE, calc_vdw_pbc, calc_vdw_force, update_vlist
 
 contains
 
@@ -346,11 +346,11 @@ contains
         np = size(r, dim=2, kind=i64)
         cutoff2 = cutoffv * cutoffv
 
-        pos = 1
+        pos = 1_I64
 
         do i = imin, imax
 
-            nneigh = 0
+            nneigh = 0_I64
 
             do j = 1, np
 
@@ -361,7 +361,7 @@ contains
                 dist2 = rij(1, 1)**2 + rij(2, 1)**2 + rij(3, 1)**2
 
                 if (dist2 <= cutoff2) then
-                    nneigh = nneigh + 1
+                    nneigh = nneigh + 1_I64
                     vlist(pos + nneigh) = j
                 end if
 
@@ -372,5 +372,30 @@ contains
         end do
 
     end subroutine compute_vlist
+
+    function update_vlist(displacement, rmax) result(update)
+        ! Author: Marc Alsina <marcalsinac@gmail.com>
+        ! Subroutine that computes if the verlet list has to be updated,
+        ! based on atoms displacements
+
+        ! The actual criteria is to update the verlet list if the displacement
+        ! of each particle is greater or equal half times the buffer cutoff.
+        !
+        ! Args:
+        !   displacement (REAL64[3,N]): Displacement of each atom
+        !   rmax         (REAL64)     : Verlet list cutoff
+        !
+        ! Returns:
+        !   update       (LOGICAL)    : Update or not the verlet list
+        implicit none
+        ! In/Out variables
+        real(kind=dp), dimension(:, :), intent(in) :: displacement
+        real(kind=dp), intent(in)                  :: rmax
+        logical                                    :: update
+
+
+        update = any(displacement >= rmax * 0.5_DP)
+    
+    end function update_vlist
 
 end module potential_m

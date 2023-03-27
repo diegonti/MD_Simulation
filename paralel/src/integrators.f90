@@ -1,8 +1,9 @@
 module integrators
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64, output_unit, i32 => INT32
-    use            :: mpi
+    use :: mpi
     use :: periodic_bc, only: PBC
-    use :: potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst, compute_com_momenta, compute_vlist
+    use :: potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst,&
+     compute_com_momenta, compute_vlist, update_vlist
     use :: simulation,  only: MSD, g_r
     use :: writers_m,   only: writePositions, writeRdf, writeSystem
     use :: testing
@@ -41,7 +42,7 @@ contains
         real(kind=dp), dimension(:,:), intent(inout) :: r,v
         integer(kind=i32), dimension(:), intent(in)  :: sendcounts, displs
 
-        real(kind=dp), dimension(:,:), allocatable   :: r0, rold, rnew, F
+        real(kind=dp), dimension(:,:), allocatable   :: r0, rold, rnew, F, displacement
         real(kind=dp)                                :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t, dr
         real(kind=dp), dimension(3)                  :: p_com
         real(kind=dp), dimension(:,:), allocatable   :: gdr
@@ -55,15 +56,17 @@ contains
 
         allocate(r0(3,N))
         allocate(rold(3,N))
-        allocate(rnew(3,N))
+        allocate(rnew(3,local_N))
         allocate(F(3,N))
         ! allocate(gdr(2,gdr_num_bins))
         allocate(vlist(N**2))
+        allocate(displacement(3, local_N))
 
         F = 0.0_dp
         rold = r
         r = r - (L / 2.0_dp)
         r0(:,:) = r(:,:)  ! Saving initial configuration (for MSD)
+        rnew(:,:) = r(:, imin:imax)
 
         call compute_vlist(L, r, 1.1_DP*cutoff, imin, imax, vlist)
 
@@ -89,6 +92,9 @@ contains
             !call g_r(gdr, r, 2_i64, gdr_num_bins, L, cutoff)
             
             ! r = rnew
+            displacement(1, :) = displacement(1,:) + (r(1, imin:imax) - rnew(1, :))
+            displacement(2, :) = displacement(2,:) + (r(2, imin:imax) - rnew(2, :))
+            displacement(3, :) = displacement(3,:) + (r(3, imin:imax) - rnew(3, :))
 
             if (mod(i, write_log) == 0) then
                 
@@ -129,13 +135,12 @@ contains
                 if (irank == 0) write(output_unit, '(1x,i0)', advance='no') (100*i)/N_steps
             end if
 
-            if (mod(i, 10_I64) == 0_I64) then
-                !TODO search a more elegant way to update the Verlet List.
-                ! write(output_unit, '(A,I2,A)') 'Worker ', irank, ' updating verlet list'
+            if (update_vlist(displacement, 1.05_DP*cutoff)) then
                 call compute_vlist(L, r, 1.05_DP*cutoff, imin, imax, vlist)
-                !write(output_unit, '(A,I2,A,F12.8)') 'Worker ', irank, ' mean number of neighbours per atom: ', &
-                !real(count(vlist > 0_I64) - local_N, kind=dp) / real(local_N, kind=dp)
-                call MPI_Barrier(MPI_COMM_WORLD, ierror)
+                write(output_unit, '(A,I2,A,I9,A,F12.8)') 'Worker ', irank, ' updating verlet list at step', i, &
+                ' Mean number of neighbours per atom: ', &
+                real(count(vlist > 0_I64, kind=i64) - local_N, kind=dp) / real(local_N, kind=dp)
+                displacement = 0.0_DP
             end if
 
             call MPI_Barrier(MPI_COMM_WORLD, ierror)
@@ -147,6 +152,8 @@ contains
                 call MPI_ALLGATHERV(v(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, v(d,:), sendcounts, displs, &
                 MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
             end do
+
+            rnew(:, :) = r(:, imin:imax)
 
         end do
 
