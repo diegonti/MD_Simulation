@@ -346,11 +346,11 @@ contains
         np = size(r, dim=2, kind=i64)
         cutoff2 = cutoffv * cutoffv
 
-        pos = 1
+        pos = 1_I64
 
         do i = imin, imax
 
-            nneigh = 0
+            nneigh = 0_I64
 
             do j = 1, np
 
@@ -361,7 +361,7 @@ contains
                 dist2 = rij(1, 1)**2 + rij(2, 1)**2 + rij(3, 1)**2
 
                 if (dist2 <= cutoff2) then
-                    nneigh = nneigh + 1
+                    nneigh = nneigh + 1_I64
                     vlist(pos + nneigh) = j
                 end if
 
