@@ -17,7 +17,7 @@ program main
     ! Scalar variables
     integer(kind=i32) :: status_cli
     integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, write_frame, &
-    log_unit, traj_unit, rdf_unit
+    log_unit, traj_unit, rdf_unit, d
     real(kind=dp)     :: init_time, end_time, density, L, a, T, lj_epsilon, lj_sigma, mass, dt, &
     andersen_nu
     integer, parameter:: seed_number = 165432156
@@ -29,7 +29,7 @@ program main
 
     ! MPI memory definition
     integer, parameter      :: MASTER = 0
-    integer                 :: taskid, ierror, numproc, request
+    integer                 :: taskid, ierror, numproc
     integer(kind=i64)       :: imin, imax, local_N
     integer,  allocatable, dimension(:) :: sendcounts, displs
 
@@ -115,6 +115,9 @@ program main
 
     ! ~ Initialization of the system ~
     call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
+
+    cell_type = 'sc'
+    init_vel = 'bimodal'
     call getInitialParams(trim(cell_type),N,density,M,L,a)
 
     call divide_positions(taskid,numproc,N, sendcounts,displs,imin,imax,local_N)
@@ -124,8 +127,19 @@ program main
 
 
     ! ~ Starting the trajectory of the system ~
+
+    !do d = 1, 3
+    !    call MPI_ALLGATHERV(r(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, r(d,:), sendcounts, displs, &
+    !    MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
+        
+    !    call MPI_ALLGATHERV(v(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, v(d,:), sendcounts, displs, &
+    !    MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
+
+    !end do
+
     call mainLoop(log_unit, traj_unit, rdf_unit, lj_epsilon, lj_sigma, mass, &
-    n_steps, dt, L, T, andersen_nu, 0.5_dp*L, gdr_num_bins, r, v, write_stats, write_frame)    
+    n_steps, dt, L, T, andersen_nu, 0.5_dp*L, gdr_num_bins, r, v, write_stats, &
+    write_frame, taskid, imin, imax, sendcounts, displs, local_N)    
 
 
     ! ~ Memmory deallocation ~
