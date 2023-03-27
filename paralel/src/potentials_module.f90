@@ -373,4 +373,29 @@ contains
 
     end subroutine compute_vlist
 
+    function update_vlist(displacement, rmax) result(update)
+        ! Author: Marc Alsina <marcalsinac@gmail.com>
+        ! Subroutine that computes if the verlet list has to be updated,
+        ! based on atoms displacements
+
+        ! The actual criteria is to update the verlet list if the displacement
+        ! of each particle is greater or equal half times the buffer cutoff.
+        !
+        ! Args:
+        !   displacement (REAL64[3,N]): Displacement of each atom
+        !   rmax         (REAL64)     : Verlet list cutoff
+        !
+        ! Returns:
+        !   update       (LOGICAL)    : Update or not the verlet list
+        implicit none
+        ! In/Out variables
+        real(kind=dp), dimension(3, :), intent(in) :: displacement
+        real(kind=dp), intent(in)                  :: rmax
+        logical                                    :: update
+
+
+        update = any(displacement >= rmax * 0.5_DP)
+    
+    end function update_vlist
+
 end module potential_m
