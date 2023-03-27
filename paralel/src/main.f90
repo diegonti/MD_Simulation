@@ -102,11 +102,10 @@ program main
     call MPI_Bcast(density, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(andersen_nu, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(T, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
-
+    
     ! CHARACTER broadcasting
     !call MPI_Bcast(cell_type, 1, MPI_CHAR, MASTER, MPI_COMM_WORLD, ierror)
     !call MPI_Bcast(init_vel, 1, MPI_CHAR, MASTER, MPI_COMM_WORLD, ierror)
-
 
     ! ~ Memmory allocation ~
     allocate(r(3,N))
@@ -124,7 +123,7 @@ program main
     call divide_positions(taskid,numproc,N, sendcounts,displs,imin,imax,local_N)
     call initializePositions(M,a,r,trim(cell_type),imin,imax,sendcounts,displs)
 
-    call initializeVelocities(T,v,init_vel)
+    call initializeVelocities(T,v,init_vel,imin,imax,sendcounts,displs)
 
 
     ! ~ Starting the trajectory of the system ~
