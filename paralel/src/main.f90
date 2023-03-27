@@ -86,8 +86,26 @@ program main
 
     end if
 
+    ! INT64 Broadcasting
     call MPI_Bcast(N, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(n_steps, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(write_file, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(write_stats, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(gdr_num_bins, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(write_frame, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
 
+    ! REAL64 Broadcasting
+    call MPI_Bcast(lj_epsilon, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(lj_sigma, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(mass, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(dt, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(density, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(andersen_nu, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(T, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    
+    ! CHARACTER broadcasting
+    !call MPI_Bcast(cell_type, 1, MPI_CHAR, MASTER, MPI_COMM_WORLD, ierror)
+    !call MPI_Bcast(init_vel, 1, MPI_CHAR, MASTER, MPI_COMM_WORLD, ierror)
 
     ! ~ Memmory allocation ~
     allocate(r(3,N))
