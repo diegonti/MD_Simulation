@@ -175,12 +175,16 @@ module initialization
     end subroutine initializePositions
 
 
-    subroutine initializeVelocities(T,v,init_vel)
+    subroutine initializeVelocities(T,v,init_vel,imin,imax,sendcounts,displs)
         ! Chooses and runs the specified initial velocities.
         !
         ! Args:
-        !   T           (REAL64)      : Temperature.
-        !   init_vel    (CHARACTER)   : String with the initialization method (bimodal, zero).
+        !   T           (REAL64)       : Temperature.
+        !   init_vel    (CHARACTER)    : String with the initialization method (bimodal, zero).
+        !   imin        (INT64)        : Index of the first particle of each process.
+        !   imax        (INT64)        : Index of the last particle of each process.
+        !   sendcounts  (INT[numproc]) : Array containing the number of particles (local_N) of each process (index).
+        !   displs      (INT[numproc]) : Array containing the index of the first particle of each process (imin).
         !
         ! Inout:
         !   v           (REAL64[3,N]) : 3xN Velocity matrix.
@@ -188,14 +192,24 @@ module initialization
         double precision,intent(in) :: T
         double precision,intent(inout),dimension(:,:) :: v
         character(*), intent(in) :: init_vel
+        integer(kind=i64), intent(in) :: imin, imax
+        integer, dimension(:), intent(in):: sendcounts,displs 
+        integer(kind=i64) :: local_N,d
+
+        local_N = imax - imin + 1_i64
 
         if ((index(init_vel,"bim")==1) .OR. (index(init_vel,"BIM")==1))  then
-            call initBimodal(T,v)
+            call initBimodal(T,v,imin,imax)
         else if((index(init_vel,"zero")==1) .OR. (index(init_vel,"ZERO")==1)) then
-            v = 0d0
+            v(:,imin:imax) = 0d0
         else
             print*, "Select a valid initial velocity: bimodal, zero."
         end if
+
+        do d=1,3
+            call MPI_ALLGATHERV(v(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, v(d,:), sendcounts, displs, &
+                    MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
+        end do
 
     end subroutine initializeVelocities
 
@@ -252,11 +266,13 @@ module initialization
     end subroutine initializeGeneral
 
 
-    subroutine initBimodal(T,v)
+    subroutine initBimodal(T,v,imin,imax)
         ! Initial velocities as Bimodal distribution.
         !
         ! Args:
         !   T           (REAL64)      : Temperature.
+        !   imin        (INT64)       : Index of the first particle of each process.
+        !   imax        (INT64)       : Index of the last particle of each process.
         !
         ! Inout:
         !   v           (REAL64[3,N]) : 3xN Velocity matrix.
@@ -264,17 +280,19 @@ module initialization
         implicit none
         double precision,intent(in) :: T
         double precision,intent(inout),dimension(:,:) :: v
+        integer(kind=i64), intent(in) :: imin, imax
         double precision :: vi
-        integer(kind=i64) :: N
+        double precision :: sign
 
-        N = size(v, dim=2, kind=i64)
-        v = 0d0
-        if (mod(N,2_i64)/=0_i64) then
-            print*, "Number of particles (N) should be multiple of 2."
+        if (mod(imin,2_i64)==0) then
+            sign = 1.d0
+        else
+            sign = -1.d0
         end if
+
         vi = sqrt(T)
-        v(:,1:N:2) = -vi
-        v(:,2:N:2) = +vi
+        v(:,imin:imax:2) = sign*vi
+        v(:,imin+1_i64:imax:2) = -sign*vi
 
     end subroutine initBimodal
 

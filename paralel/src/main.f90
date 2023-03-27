@@ -102,7 +102,7 @@ program main
     call divide_positions(taskid,numproc,N, sendcounts,displs,imin,imax,local_N)
     call initializePositions(M,a,r,trim(cell_type),imin,imax,sendcounts,displs)
 
-    call initializeVelocities(T,v,init_vel)
+    call initializeVelocities(T,v,init_vel,imin,imax,sendcounts,displs)
 
 
     ! ~ Starting the trajectory of the system ~
