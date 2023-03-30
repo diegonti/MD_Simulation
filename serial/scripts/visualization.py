@@ -89,17 +89,17 @@ if __name__ == "__main__":
 
     # Energies Plot
     makePlot(t,[Ekin,Epot,E],["r","b","k"],["$E_{kin}$","$E_{pot}$","$E$"],
-            file_name="energies.png",
+            file_name="energies.png",start=start,finish=finish,
             xlabel="Time (ps)", ylabel="Energy (kJ/mol)")
 
     # Temperature Plot
     makePlot(t,Tinst,"r","$T_{inst}$",
-            file_name="temperature.png",
+            file_name="temperature.png",start=start,finish=finish,
             xlabel="Time (ps)", ylabel="Temperature (K)")
 
     # Pressure Plot
     makePlot(t,P,"purple","P",
-            file_name="pressure.png",
+            file_name="pressure.png",start=start,finish=finish,
             xlabel="Time (ps)",ylabel="Pressure (Pa)")
 
     # MSD Plot
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # RDF Plot
     makePlot(r,RDF,"red","RDF",
              file_name="RDF.png",
-             xlabel="RDF",ylabel="r ($\AA$)")
+             xlabel="r ($\AA$)",ylabel="RDF")
     
 
     # Trajectory
