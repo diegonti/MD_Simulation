@@ -1,6 +1,6 @@
-# Python Scripts for Statistics and Visualization
+# Python Scripts for Statistics and Visualization (in parallel)
 
-Here are all the scripts used by the program to compute the statistics of the output results and to visualize them.
+Here are all the scripts used by the program to compute the statistics of the output results and to visualize them. Its the same version as the one in `serial/` but now it used the builtin `multiprocessing` module to paralelize the work among cores. Its set up in a way that each core will take care of une obverbable data and make its correspondent plots and stats.
 
 ## `stats.py` : 
 
@@ -32,7 +32,7 @@ $ python3 visualization.py [-h] [-t] [-ip input_path] [-op output_path] [-s star
 ```
 Altough now this one is used if a GIF file of the trajectory wants to be created:
 ```
-[-t] To create a trajectory.gif file of the simulation trajectory (for large trajectories it may take some time).
+[-t] To create a trajectory.gif file of the simulation trajectory (for large trajectories it may take some time, VMD may be better).
 ```
 
 <br>
