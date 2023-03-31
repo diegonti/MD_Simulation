@@ -164,10 +164,11 @@ def individualStats(input_data):
 	
 	# Writing and Plotting results
 	observable_label = data_labels_i.split("(")[0].strip()
-	write(data_format.format(data_labels_i,mean,std,tau),file=outFile)
+	# write(data_format.format(data_labels_i,mean,std,tau),file=outFile)
+	line_i = data_format.format(data_labels_i,mean,std,tau)
 	plotBlockAverage(m_points_i,blockVar_i,blockMean_i,fit_params=params_i,label=data_labels_f_i, save_name=f"BlockAverage_{observable_label}.png")
 
-	return params_i
+	return (params_i,line_i)
 
 ###################### MAIN PROGRAM ######################
 
@@ -218,10 +219,11 @@ if __name__=="__main__":
 	# Paralel Statistics
 	input_data = zip(data[1:],data_labels,data_labels_f)
 	pool = mp.Pool(len(data_labels))
-	params = pool.map(individualStats,input_data)
+	output = pool.map(individualStats,input_data)
 	pool.close()
 	pool.join()
 
+	for _,line in output: write(line,file=outFile)
 
 	# Difussion Coeffitient (linear fit of MSD to y= ax + b)
 	(a,b),D_residual,extra1,extra2,extra3 = np.polyfit(t[start:finish],MSD[start:finish],deg=1,full=True)
@@ -233,8 +235,8 @@ if __name__=="__main__":
 	write("Fitting parameters for block STD fitting to the function f(x) = a-b*exp(-x/tau):\n",file=outFile)
 	write(titles_format.format("Observable","a", "b", "\u03C4"),file=outFile)
 	write(title("",before=23*4,head=0,tail=0),outFile)
-	for i,param in enumerate(params):
-		write(data_format.format(data_labels[i], *param),file=outFile)
+	for i,param in enumerate(output):
+		write(data_format.format(data_labels[i], *param[0]),file=outFile)
 
 
 	# Ending
