@@ -1,8 +1,9 @@
 """
-Script to compute the statistics (mean, std and autocorrelation time) of the raw results of the simulation.
+Script to compute the statistics (mean, std and autocorrelation time) of the raw results of the simulation in parallel.
 Uses the Block Average method to compute the average <x> and the std \sigma.
 The STD vs. block size is fitted to a exponential function f(x) = a-b*exp(-x/tau).
 Returns an output file with the stats and plots of the statistichal error (STD) vs. the block size.
+It is set so that each processor takes care of 1 observable.
 
 Use with: $ python3 stats.py -ip input_path -op output_path -s start -f final
 although if any arguments is not present chooses from the default 
