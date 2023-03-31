@@ -14,6 +14,7 @@ import os
 import warnings
 import time as cpu_time
 from argparse import ArgumentParser, Namespace
+import multiprocessing as mp
 
 import numpy as np
 import scipy as sp
@@ -130,7 +131,7 @@ def fit_function(x,a,b,tau):
 
 def write(line,file):
 	"""Prints and writes line in the terminal and output file."""
-	print(line)
+	print(line,flush=True)
 	with open(file,"a",encoding="utf-8") as outFile: outFile.write(line+"\n")
 
 def title(text,before=15,after=15,separator="-",head=2,tail=1):
@@ -139,6 +140,33 @@ def title(text,before=15,after=15,separator="-",head=2,tail=1):
     line = "\n"*head+separator*before+text+separator*after+"\n"*tail
     return line
 
+
+def individualStats(input_data): 
+	"""The individual work that an individual worker will do. Function that will be paralelized."""
+
+	xi,data_labels_i,data_labels_f_i = input_data
+	n_tot = len(xi)
+	
+	# Calculate Block Averages (Binning)
+	m_points_i,blockVar_i,blockMean_i = blockAverage(xi[start:finish],maxBlockSize=int(n_tot/100))
+
+	# Calulate fitting for the Block_STD computed
+	params_i, cov_i = fit(fit_function,m_points_i,np.sqrt(blockVar_i))      # Fitting --> Getting optimized params
+	x_m = np.linspace(m_points_i[0],m_points_i[-1])                         # linspace for the fitted function (smoother)
+	fitted_sigma = fit_function(x_m,*params_i)                              # values for the fitted function
+	# params.append(params_i)
+	
+	# Computing statistichal parameters
+	mean = blockMean_i.mean()                                               # Calculation of the total mean (average of BockMeans)
+	std = fitted_sigma[-1]                                                  # Correlated STD will be the one at large BlockSizes (m) (last values of fitted function, plateau)
+	tau = params_i[-1]														# Autocorrelation time (from fitting)
+	
+	# Writing and Plotting results
+	observable_label = data_labels_i.split("(")[0].strip()
+	write(data_format.format(data_labels_i,mean,std,tau),file=outFile)
+	plotBlockAverage(m_points_i,blockVar_i,blockMean_i,fit_params=params_i,label=data_labels_f_i, save_name=f"BlockAverage_{observable_label}.png")
+
+	return params_i
 
 ###################### MAIN PROGRAM ######################
 
@@ -167,8 +195,8 @@ if __name__=="__main__":
 
 	# Loading data from test files
 	dataT = np.loadtxt(ipath,skiprows=1)     			# Thermodynamic data
-	data = dataT.T                          					# Each parameter in a column
-	t,E,Epot,Ekin,Tinst,P,MSD,p = data      					# Getting each parameter
+	data = dataT.T                          			# Each parameter in a column
+	t,E,Epot,Ekin,Tinst,P,MSD,p = data      			# Getting each parameter
 
 	# Defining data labels 
 	data_labels = ["E (kJ/mol)","Epot (kJ/mol)","Ekin (kJ/mol)","T (K)","P (Pa)","MSD (A^2)","Pt (kg*m/s)"]
@@ -186,29 +214,13 @@ if __name__=="__main__":
 	write(titles_format.format("Observable","Average, <x>", "STD, \u03C3", "Autocorrelation time, \u03C4"),file=outFile)
 	write(title("",before=23*4,head=0,tail=0),outFile)
 
-	# Computing Block Averages of diferent data
-	params = []                                     # Initial empty array for optimized fitting parameters
-	for i,xi in enumerate(data[1:]):              	# For each data set (avoiding time)
-		n_tot = len(xi)
-		
-		# Calculate Block Averages (Binning)
-		m_points_i,blockVar_i,blockMean_i = blockAverage(xi[start:],maxBlockSize=int(n_tot/100))
+	# Paralel Statistics
+	input_data = zip(data[1:],data_labels,data_labels_f)
+	pool = mp.Pool(len(data_labels))
+	params = pool.map(individualStats,input_data)
+	pool.close()
+	pool.join()
 
-		# Calulate fitting for the Block_STD computed
-		params_i, cov_i = fit(fit_function,m_points_i,np.sqrt(blockVar_i))      # Fitting --> Getting optimized params
-		x_m = np.linspace(m_points_i[0],m_points_i[-1])                         # linspace for the fitted function (smoother)
-		fitted_sigma = fit_function(x_m,*params_i)                              # values for the fitted function
-		params.append(params_i)
-		
-		# Computing statistichal parameters
-		mean = blockMean_i.mean()                                               # Calculation of the total mean (average of BockMeans)
-		std = fitted_sigma[-1]                                                  # Correlated STD will be the one at large BlockSizes (m) (last values of fitted function, plateau)
-		tau = params_i[-1]														# Autocorrelation time (from fitting)
-		
-		# Writing and Plotting results
-		observable_label = data_labels[i].split("(")[0].strip()
-		write(data_format.format(data_labels[i],mean,std,tau),file=outFile)
-		plotBlockAverage(m_points_i,blockVar_i,blockMean_i,fit_params=params_i,label=data_labels_f[i], save_name=f"BlockAverage_{observable_label}.png")
 
 	# Difussion Coeffitient (linear fit of MSD to y= ax + b)
 	(a,b),D_residual,extra1,extra2,extra3 = np.polyfit(t[start:finish],MSD[start:finish],deg=1,full=True)
