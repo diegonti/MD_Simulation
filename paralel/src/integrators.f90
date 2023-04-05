@@ -141,9 +141,9 @@ contains
 
             if (update_vlist(displacement, 1.05_DP*cutoff)) then
                 call compute_vlist(L, r, 1.05_DP*cutoff, imin, imax, vlist)
-                !write(output_unit, '(A,I2,A,I9,A,F12.8)') 'Worker ', irank, ' updating verlet list at step', i, &
-                !' Mean number of neighbours per atom: ', &
-                !real(count(vlist > 0_I64, kind=i64) - local_N, kind=dp) / real(local_N, kind=dp)
+                write(output_unit, '(A,I2,A,I9,A,F12.8)') 'Worker ', irank, ' updating verlet list at step', i, &
+                ' Mean number of neighbours per atom: ', &
+                real(count(vlist > 0_I64, kind=i64) - local_N, kind=dp) / real(local_N, kind=dp)
                 displacement = 0.0_DP
             end if
 
