@@ -1,0 +1,8 @@
+~ Welcome to MDEMI!! ~
+Reading input file...
+Successfully loaded parameter file, starting simulation
+   7.0798973497089562E-003   1.4092309615896950       0.69999999999999996     
+           1                   33                   64
+           0                    1                   32
+
+Execution done in:   0.67917526 seconds.
