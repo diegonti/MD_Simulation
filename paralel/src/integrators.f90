@@ -36,29 +36,31 @@ contains
 
         implicit none
         integer(kind=i64), intent(in)                :: log_unit,traj_unit,rdf_unit, N_steps, gdr_num_bins, write_log, write_pos,& 
-        imin, imax, local_N
+                                                        imin, imax, local_N
         integer(kind=i32), intent(in)                :: irank
         real(kind=dp), intent(in)                    :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt
         real(kind=dp), dimension(:,:), intent(inout) :: r,v
         integer(kind=i32), dimension(:), intent(in)  :: sendcounts, displs
 
+        ! local variables
         real(kind=dp), dimension(:,:), allocatable   :: r0, rold, rnew, F, displacement
-        real(kind=dp)                                :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t, dr
+        real(kind=dp)                                :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t,dr
         real(kind=dp), dimension(3)                  :: p_com
-        real(kind=dp), dimension(:,:), allocatable   :: gdr
+        real(kind=dp), dimension(:), allocatable     :: gdr, local_gdr
         integer(kind=i64), dimension(:), allocatable :: vlist
         integer(kind=i64)                            :: i, N, d
-        real(kind=dp)                                :: local_Ekin, local_Epot, local_p_com_t, local_virial, virial
+        real(kind=dp)                                :: local_Ekin, local_Epot, local_p_com_t, local_virial, virial, local_msd
         integer                                      :: ierror
 
-        dr = cutoff/dble(gdr_num_bins)
         N = size(r,dim=2,kind=i64)
+        dr = cutoff /dble(gdr_num_bins)
 
         allocate(r0(3,N))
         allocate(rold(3,N))
         allocate(rnew(3,local_N))
         allocate(F(3,N))
-        ! allocate(gdr(2,gdr_num_bins))
+        allocate(gdr(gdr_num_bins))
+        allocate(local_gdr(gdr_num_bins))
         allocate(vlist(N**2))
         allocate(displacement(3, local_N))
 
@@ -70,7 +72,7 @@ contains
 
         call compute_vlist(L, r, 1.1_DP*cutoff, imin, imax, vlist)
 
-        ! call g_r(gdr, r, 1_i64, gdr_num_bins, L, cutoff)
+        call g_r(local_gdr, r, 1_i64, gdr_num_bins, L, cutoff, imin, imax, vlist)
 
         if (irank == 0) then
             write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  MSD Pt"
@@ -88,8 +90,7 @@ contains
             ! call euler()
             call vel_Andersen(v,nu,T, imin, imax)
 
-            ! rMSD = MSD(r,r0,L)
-            !call g_r(gdr, r, 2_i64, gdr_num_bins, L, cutoff)
+            call g_r(local_gdr, r, 2_i64, gdr_num_bins, L, cutoff, imin, imax, vlist)
             
             ! r = rnew
             displacement(1, :) = displacement(1,:) + (r(1, imin:imax) - rnew(1, :))
@@ -104,17 +105,20 @@ contains
                 local_virial = calc_pressure(L, r, cutoff, imin, imax, vlist)
                 call compute_com_momenta(v, p_com, imin, imax)
                 local_p_com_t = dsqrt(dot_product(p_com,p_com))
+                local_msd = MSD(r, r0, L, imin, imax)
 
                 call MPI_Barrier(MPI_COMM_WORLD, ierror)
                 call MPI_Reduce(local_Ekin, Ekin, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
                 call MPI_Reduce(local_Epot, Epot, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
                 call MPI_Reduce(local_virial, virial, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
                 call MPI_Reduce(local_p_com_t, p_com_t, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+                call MPI_Reduce(local_msd, rMSD, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
 
                 if (irank == 0) then
 
                     Ekin = Ekin * 0.5_DP
                     Epot = Epot * 0.5_DP  ! To account for the double countiung because of verlet lists
+                    rMsd = rMSD / dble(N)
 
                     Etot = Epot + Ekin
                     Tinst = calc_Tinst(Ekin,N)
@@ -137,11 +141,12 @@ contains
 
             if (update_vlist(displacement, 1.05_DP*cutoff)) then
                 call compute_vlist(L, r, 1.05_DP*cutoff, imin, imax, vlist)
-                write(output_unit, '(A,I2,A,I9,A,F12.8)') 'Worker ', irank, ' updating verlet list at step', i, &
-                ' Mean number of neighbours per atom: ', &
-                real(count(vlist > 0_I64, kind=i64) - local_N, kind=dp) / real(local_N, kind=dp)
+                !write(output_unit, '(A,I2,A,I9,A,F12.8)') 'Worker ', irank, ' updating verlet list at step', i, &
+                !' Mean number of neighbours per atom: ', &
+                !real(count(vlist > 0_I64, kind=i64) - local_N, kind=dp) / real(local_N, kind=dp)
                 displacement = 0.0_DP
             end if
+
 
             call MPI_Barrier(MPI_COMM_WORLD, ierror)
             
@@ -157,9 +162,10 @@ contains
 
         end do
 
-        ! call g_r(gdr, r, 3_i64, gdr_num_bins, L, cutoff)
-
-        ! call writeRDF(gdr,rdf_unit, lj_sigma)
+        do i = 1, gdr_num_bins
+            call MPI_Reduce(local_gdr(i), gdr(i), 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+        end do
+        call writeRDF(gdr,rdf_unit,L,dr,lj_sigma,N,N_steps)
 
         deallocate(r0)
         deallocate(rold)
