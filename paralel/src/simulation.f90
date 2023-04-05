@@ -8,7 +8,7 @@ module simulation
 
 contains
 
-    function MSD(positions, initial_positions, L)
+    function MSD(positions, initial_positions, L, imin, imax)
         !
         !  This function calculates the value of the Mean Squared Displacement from
         ! the values of the current positions and the initial positions of the 
@@ -25,27 +25,28 @@ contains
 
         double precision, dimension(:,:), intent(in)        :: positions, initial_positions
         double precision, intent(in)                        :: L
+        integer(kind=i64), intent(in)                       :: imin, imax
         double precision                                    :: MSD
         ! local variables
-        double precision, dimension(3,size(positions(1,:))) :: r_aux
-        integer(kind=i64)                                   :: i, N
+        double precision, dimension(3,imax-imin+1)          :: r_aux
+        integer(kind=i64)                                   :: i
 
-        N = size(positions(1,:), kind=i64)
+!        N = size(positions(1,:), kind=i64)
 
         MSD = 0.0d0
 
-        r_aux = positions - initial_positions
+        r_aux = positions(:,imin:imax) - initial_positions(:,imin:imax)
         call PBC(r_aux, L)
 
-        do i = 1, N
+        do i = 1, imax-imin
             MSD = MSD + sum(r_aux(:,i)*r_aux(:,i))  
         end do
         
-        MSD = MSD / dble(N)
+        !MSD = MSD / dble(N)
 
     end function MSD
 
-    subroutine g_r(gr_mat, pos, switch_case, num_bins, L, cutoff)
+    subroutine g_r(gr_mat, pos, switch_case, num_bins, L, cutoff, imin, imax, vlist)
         ! Author: Marc Alsina <marcalsinac@gmail.com>
         !
         ! Subroutine that performs a radial distribution finction
@@ -58,70 +59,62 @@ contains
         !   num_bins     (INT64): Number of bins to use to generate the rdf
         !   L           (REAL64): Simulation side box
         !   cutoff      (REAL64): The cutoff to account for interactions
+        !   imin         (INT64): The minimum index particle
+        !   imax         (INT64): The maximum index particle
+        !   vlist     (INT64[:]): Verlet list for the rank who's processing
         !
         ! Returns:
-        !   gr_mat (REAL64[2,:]): At case 1, it doesn't return nothing, at case 2,
+        !   gr_mat (REAL64[2,:]): At case 1, it doesn't return anything, at case 2,
         !                         it is the distance array selected, and the binning 
-        !                         is performed. At stage 3, it returns in the first
-        !                         dimension of rank 1 the dinstances, and the second 
-        !                         RDF values.
+        !                         is performed.
 
-        ! Notes
-        ! gr_mat(1,:) -> valors de distancia
-        ! gr_mat(2,:) -> numero de partícules a aquesta distancia
         implicit none
         ! In/Out variables
-        real(kind=dp), dimension(:,:), intent(inout) :: gr_mat
+        real(kind=dp), dimension(:), intent(inout)   :: gr_mat
         real(kind=dp), dimension(:,:), intent(in)    :: pos
         real(kind=dp), intent(in)                    :: L, cutoff
-        integer(kind=i64), intent(in)                :: switch_case, num_bins
+        integer(kind=i64), intent(in)                :: switch_case, num_bins, imin, imax
+        integer(kind=i64), dimension(:), intent(in)  :: vlist
         ! Internal variables
-        integer(kind=i64), save                      :: i_ax, index_mat, j_ax, n_p, n_gdr
-        real(kind=dp), save                          :: dr, dist, dv, ndg, dens
-        real(kind=dp), parameter                     :: PI = 4.0_dp * atan(1.0_dp)
+        integer(kind=i64), save                      :: index_mat
+        integer(kind=i64)                            :: counter, n_neigh, i_part, j_part, neigh_index
+        real(kind=dp), save                          :: dr, dist
         real(kind=dp), dimension(3, 1)               :: rij
 
         select case (switch_case)
             case (1_i64)
                 
                 ! SWITCH = 1 => definim la memoria de la funció
-                n_p = size(pos, dim=2, kind=i64)
-                dens = real(n_p, kind=dp) / (L ** 3)
                 dr = cutoff / real(num_bins, kind=dp)
 
-                gr_mat(1,:) = [(real(i_ax, kind=dp)*dr, i_ax=1, num_bins)]
-                gr_mat(2,:) = 0.0_dp
-
-                n_gdr = 0_i64
+                gr_mat(:) = 0.0_dp
             
             case (2_i64)
                 
                 ! SWITCH = 2 => Calculem n(r)
-                n_gdr = n_gdr + 1_i64
-                do j_ax = 1, n_p - 1
-                    do i_ax = j_ax + 1, n_p
+                counter = 1_i64
+
+                do j_part = imin, imax
+                    n_neigh = vlist(counter)  ! nombre de veïns (a distancia L/2)
+
+                    do neigh_index = 1, n_neigh
                         ! Calculem rij
-                        rij(:, 1) = pos(:, j_ax) - pos(:, i_ax)
+                        i_part = vlist(counter + neigh_index)
+                        if (i_part < j_part) then
+                            cycle
+                        end if
+                       
+                        rij(:, 1) = pos(:, j_part) - pos(:, i_part)
                         call pbc(rij, L)
                         dist = norm2(rij(:, 1))
                         
                         ! Apliquem el cutoff de maxima distancia
                         if (dist < cutoff) then  ! MA: cut-off is set as the maximum distance to account
                             index_mat = int(dist/dr, kind=i64) + 1_i64
-                            gr_mat(2, index_mat) = gr_mat(2, index_mat) + 2.0_dp
+                            gr_mat(index_mat) = gr_mat(index_mat) + 2.0d0
                         end if
                     end do
-                end do
-            
-            case (3_i64)
-        
-                ! SWITCH = 3 => Calculem g(r)
-                do i_ax = 1, num_bins
-                    associate(gdr => gr_mat(2, i_ax))
-                        dv = (((real(i_ax, kind=dp) + 1.0_dp) ** 3) - (real(i_ax, kind=dp) ** 3)) * (dr ** 3)
-                        ndg = (4.0_dp / 3.0_dp) * pi * dv * dens
-                        gdr = gdr / (real(n_p, kind=dp) * ndg * real(n_gdr, kind=dp))
-                    end associate
+                    counter = counter + n_neigh  +1_i64 ! index de la següent particula
                 end do
             
             end select
