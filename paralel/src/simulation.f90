@@ -8,43 +8,59 @@ module simulation
 
 contains
 
-    function MSD(positions, initial_positions, L, imin, imax)
+    subroutine MSD(positions, time_positions, L, i_sweep, sweeps, v_MSD, imin, imax)
         !
         !  This function calculates the value of the Mean Squared Displacement from
-        ! the values of the current positions and the initial positions of the 
-        ! particles. 
+        ! the values of the current positions and the initial positions of the
+        ! particles.
 
         ! Args:
-        !   positions         (REAL64[3,N]) : The current positions' matrix of the system.
-        !   initial_positions (REAL64[3,N]) : The initial positions' matrix of the system.
-        !   L                      (REAL64) : Length of the sides of the box, in reduced units.
-        
+        !   positions      (REAL64[3,N])       : The current positions' matrix of the system.
+        !   time_positions (REAL64[sweeps,3,N]): Positions' matrix of the system for different timeframes.
+        !   L              (REAL64)            : Length of the sides of the box, in reduced units.
+        !   i_sweep        (INT64)             : Current time iteration.
+        !   sweeps         (INT64)             : Total sweeps to compute.
+        !   v_MSD          (REAL64[N_steps])   : MSD value for each time-frame
+        !   imin           (INT64)             : Minimum index of particle
+        !   imax           (INT64)             : Maximum index of particle
+
         ! Returns:
-        !   MSD (REAL64[:]) : Value of the mean squared displacement of the system.
+        !   v_MSD          (REAL64[N_steps])   : MSD value for each time-frame
         !
 
-        double precision, dimension(:,:), intent(in)        :: positions, initial_positions
+        double precision, dimension(:,:), intent(in)        :: positions
+        double precision, dimension(:,:,:), intent(in)      :: time_positions
         double precision, intent(in)                        :: L
-        integer(kind=i64), intent(in)                       :: imin, imax
-        double precision                                    :: MSD
+        integer(kind=i64), intent(in)                       :: i_sweep, sweeps, imin, imax
+        double precision, dimension(:), intent(inout)       :: v_MSD
         ! local variables
-        double precision, dimension(3,imax-imin+1)          :: r_aux
-        integer(kind=i64)                                   :: i
+        double precision, dimension(3,size(positions(1,:))) :: r_aux
+        double precision                                    :: MSD_aux
+        integer(kind=i64)                                   :: i, k, N, ind
 
-!        N = size(positions(1,:), kind=i64)
+        N = size(positions(1,:), kind=i64)
 
-        MSD = 0.0d0
+        ind = sweeps
+        if (i_sweep < sweeps) then
+            ind = i_sweep
+        end if
 
-        r_aux = positions(:,imin:imax) - initial_positions(:,imin:imax)
-        call PBC(r_aux, L)
+        do k = 1, ind
+            r_aux = positions - time_positions(k,:,:)
+            call PBC(r_aux, L)
+            MSD_aux = 0.0d0
 
-        do i = 1, imax-imin
-            MSD = MSD + sum(r_aux(:,i)*r_aux(:,i))  
+            do i = imin, imax
+                MSD_aux = MSD_aux + sum(r_aux(:,i)*r_aux(:,i))
+            end do
+
+            MSD_aux = MSD_aux / dble(N)
+            v_MSD(i_sweep-k+1) = v_MSD(i_sweep-k+1) + MSD_aux
+
         end do
-        
-        !MSD = MSD / dble(N)
 
-    end function MSD
+    end subroutine MSD
+
 
     subroutine g_r(gr_mat, pos, switch_case, num_bins, L, cutoff, imin, imax, vlist)
         ! Author: Marc Alsina <marcalsinac@gmail.com>
