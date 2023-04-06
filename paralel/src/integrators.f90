@@ -5,7 +5,7 @@ module integrators
     use :: potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst,&
      compute_com_momenta, compute_vlist, update_vlist
     use :: simulation,  only: MSD, g_r
-    use :: writers_m,   only: writePositions, writeRdf, writeSystem
+    use :: writers_m,   only: writePositions, writeRdf, writeMSD, writeSystem
     use :: testing
 
     implicit none
@@ -14,8 +14,8 @@ module integrators
 
 contains
 
-    subroutine mainLoop(log_unit,traj_unit,rdf_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,gdr_num_bins,r,v, &
-        write_log, write_pos, irank, imin, imax, sendcounts, displs, local_N)
+    subroutine mainLoop(log_unit,traj_unit,rdf_unit,msd_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,&
+        gdr_num_bins,n_sweeps,r,v,write_log, write_pos, irank, imin, imax, sendcounts, displs, local_N)
         ! Main Simulation Loop
         !
         ! Args:
@@ -29,48 +29,56 @@ contains
         !   nu          (REAL64)    : Probability for the Andersen Thermostat.
         !   cutoff      (REAL64)    : Cutoff distance for the interaction (<0.5L).
         !   gdr_num_bins(INT64)     : Number of bins for calculating RDF.
+        !   n_sweeps    (INT64)     : Number of sweeps to compute for the MSD calculation.
         ! 
         ! Inout:
         !    r      (REAL64[3,N]) : positions of all N particles, in reduced units.
-        !    v      (REAL64[3,N]) : velocities of all N partciles, in reduced units.
+        !    v      (REAL64[3,N]) : velocities of all N particles, in reduced units.
 
         implicit none
-        integer(kind=i64), intent(in)                :: log_unit,traj_unit,rdf_unit, N_steps, gdr_num_bins, write_log, write_pos,& 
-        imin, imax, local_N
+        integer(kind=i64), intent(in)                :: log_unit, traj_unit, rdf_unit, msd_unit, N_steps, gdr_num_bins, &
+                                                        n_sweeps, write_log, write_pos, imin, imax, local_N
         integer(kind=i32), intent(in)                :: irank
         real(kind=dp), intent(in)                    :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt
         real(kind=dp), dimension(:,:), intent(inout) :: r,v
         integer(kind=i32), dimension(:), intent(in)  :: sendcounts, displs
 
+        ! local variables
         real(kind=dp), dimension(:,:), allocatable   :: r0, rold, rnew, F, displacement
-        real(kind=dp)                                :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t, dr
+        real(kind=dp)                                :: time, Etot,Epot,Ekin,Tinst,press,p_com_t,dr
         real(kind=dp), dimension(3)                  :: p_com
-        real(kind=dp), dimension(:,:), allocatable   :: gdr
+        real(kind=dp), dimension(:), allocatable     :: gdr, local_gdr, v_MSD, local_MSD
+        real(kind=dp), dimension(:,:,:), allocatable :: time_r
         integer(kind=i64), dimension(:), allocatable :: vlist
         integer(kind=i64)                            :: i, N, d
         real(kind=dp)                                :: local_Ekin, local_Epot, local_p_com_t, local_virial, virial
         integer                                      :: ierror
 
-        dr = cutoff/dble(gdr_num_bins)
         N = size(r,dim=2,kind=i64)
+        dr = cutoff /dble(gdr_num_bins)
 
         allocate(r0(3,N))
         allocate(rold(3,N))
         allocate(rnew(3,local_N))
         allocate(F(3,N))
-        ! allocate(gdr(2,gdr_num_bins))
+        allocate(gdr(gdr_num_bins))
+        allocate(local_gdr(gdr_num_bins))
         allocate(vlist(N**2))
         allocate(displacement(3, local_N))
+        allocate(time_r(n_sweeps,3,N))
+        allocate(v_MSD(N_steps))
+        allocate(local_MSD(N_steps))
 
         F = 0.0_dp
         rold = r
         r = r - (L / 2.0_dp)
-        r0(:,:) = r(:,:)  ! Saving initial configuration (for MSD)
+        !r0(:,:) = r(:,:)  ! Saving initial configuration (for MSD)
         rnew(:,:) = r(:, imin:imax)
+        local_MSD = 0.0d0
 
         call compute_vlist(L, r, 1.1_DP*cutoff, imin, imax, vlist)
 
-        ! call g_r(gdr, r, 1_i64, gdr_num_bins, L, cutoff)
+        call g_r(local_gdr, r, 1_i64, gdr_num_bins, L, cutoff, imin, imax, vlist)
 
         if (irank == 0) then
             write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  MSD Pt"
@@ -88,13 +96,17 @@ contains
             ! call euler()
             call vel_Andersen(v,nu,T, imin, imax)
 
-            ! rMSD = MSD(r,r0,L)
-            !call g_r(gdr, r, 2_i64, gdr_num_bins, L, cutoff)
+            call g_r(local_gdr, r, 2_i64, gdr_num_bins, L, cutoff, imin, imax, vlist)
             
             ! r = rnew
             displacement(1, :) = displacement(1,:) + (r(1, imin:imax) - rnew(1, :))
             displacement(2, :) = displacement(2,:) + (r(2, imin:imax) - rnew(2, :))
             displacement(3, :) = displacement(3,:) + (r(3, imin:imax) - rnew(3, :))
+
+            if (i <= n_sweeps) then
+                time_r(i,:,:) = r
+            end if
+            call MSD(r, time_r, L, i, n_sweeps, local_MSD, imin, imax)
 
             if (mod(i, write_log) == 0) then
                 
@@ -121,7 +133,7 @@ contains
                     press = (real(N, kind=dp)*Tinst / (L**3)) + ((1.0_dp / (3.0_dp * (L**3))) * virial)
                     
                     call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,&
-                    press,rMSD,p_com_t)
+                    press,p_com_t)
 
                 end if
             end if
@@ -137,11 +149,12 @@ contains
 
             if (update_vlist(displacement, 1.05_DP*cutoff)) then
                 call compute_vlist(L, r, 1.05_DP*cutoff, imin, imax, vlist)
-                write(output_unit, '(A,I2,A,I9,A,F12.8)') 'Worker ', irank, ' updating verlet list at step', i, &
-                ' Mean number of neighbours per atom: ', &
-                real(count(vlist > 0_I64, kind=i64) - local_N, kind=dp) / real(local_N, kind=dp)
+                !write(output_unit, '(A,I2,A,I9,A,F12.8)') 'Worker ', irank, ' updating verlet list at step', i, &
+                !' Mean number of neighbours per atom: ', &
+                !real(count(vlist > 0_I64, kind=i64) - local_N, kind=dp) / real(local_N, kind=dp)
                 displacement = 0.0_DP
             end if
+
 
             call MPI_Barrier(MPI_COMM_WORLD, ierror)
             
@@ -157,15 +170,22 @@ contains
 
         end do
 
-        ! call g_r(gdr, r, 3_i64, gdr_num_bins, L, cutoff)
-
-        ! call writeRDF(gdr,rdf_unit, lj_sigma)
+        do i = 1, gdr_num_bins
+            call MPI_Reduce(local_gdr(i), gdr(i), 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+        end do
+        call MPI_REDUCE(local_MSD, v_MSD, N_steps, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+        
+        call writeRDF(gdr,rdf_unit,L,dr,lj_sigma,N,N_steps)
+        call writeMSD(v_MSD, msd_unit, n_sweeps, write_log, lj_sigma, lj_epsilon, dt, mass)
 
         deallocate(r0)
         deallocate(rold)
         deallocate(rnew)
         deallocate(F)
         deallocate(vlist)
+        deallocate(v_MSD)
+        deallocate(local_MSD)
+        deallocate(time_r)
 
     end subroutine mainLoop
 

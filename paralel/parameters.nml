@@ -5,7 +5,7 @@
   mass = 131.29,       ! [g/mol]
 
   ! Simulation related variables
-  n_steps = 5000                ! Number of simulation steps
+  n_steps = 50000                ! Number of simulation steps
   timestep = 0.025,             ! Timestep [ps]
   n_particles = 64,             ! Number of particles
   density = 0.1,                ! Density [g/mL]
@@ -27,6 +27,7 @@
 
   ! Analysis dependent variables
   gdr_num_bins = 100        ! Number of bins for RDF calculation
+  n_sweeps = 100	    ! Number of sweeps to compute for the MSD
 
 /
 

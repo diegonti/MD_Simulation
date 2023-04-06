@@ -99,10 +99,13 @@ if __name__ == "__main__":
     
     # Loading data from files                           #! Faster way? (pandas, pure Python)
     data = np.loadtxt(ipath,skiprows=1).T     			# Thermodynamic data
-    t,E,Epot,Ekin,Tinst,P,MSD,p = data      			# Getting each parameter
+    t,E,Epot,Ekin,Tinst,P,p = data      			# Getting each parameter
     
     dataRDF = np.loadtxt(sim_name+"_rdf.log",skiprows=0).T
     r,RDF = dataRDF
+
+    dataMSD = np.loadtxt(sim_name+"_msd.log",skiprows=0).T
+    t2,MSD = dataMSD
 
     # Plotting parameters for each plot
     E_params = {
