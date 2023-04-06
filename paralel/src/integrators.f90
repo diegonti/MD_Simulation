@@ -254,15 +254,15 @@ contains
         call calc_vdw_force(positions, cutoff, L, forces, imin, imax, vlist)
         
         dsp(:, :) = dsp(:, :) - positions(:, imin:imax)
-        positions = positions + (dt*velocities) + (0.5d0*dt*dt*forces)
+        positions(:, imin:imax) = positions(:, imin:imax) + (dt*velocities(:, imin:imax)) + (0.5d0*dt*dt*forces(:, imin:imax))
         dsp(:, :) = dsp(:, :) + positions(:, imin:imax)
 
         call PBC(positions, L)
 
-        velocities = velocities + (0.5d0*dt*forces)
+        velocities(:, imin:imax) = velocities(:, imin:imax) + (0.5d0*dt*forces(:, imin:imax))
 
         call calc_vdw_force(positions, cutoff, L, forces, imin, imax, vlist)
-        velocities = velocities + (0.5d0*dt*forces)
+        velocities(:, imin:imax) = velocities(:, imin:imax) + (0.5d0*dt*forces(:, imin:imax))
 
     end subroutine vv_integrator
 
