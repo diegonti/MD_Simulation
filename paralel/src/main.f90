@@ -145,8 +145,8 @@ program main
     !end do
 
     call mainLoop(log_unit, traj_unit, rdf_unit, msd_unit, lj_epsilon, lj_sigma, mass, &
-    n_steps, dt, L, T, andersen_nu, cutoff, gdr_num_bins, n_sweeps, r, v, write_stats, &
-    write_frame, taskid, imin, imax, sendcounts, displs, local_N, vcutoff)    
+    n_steps, dt, L, T, andersen_nu, cutoff*L, gdr_num_bins, n_sweeps, r, v, write_stats, &
+    write_frame, taskid, imin, imax, sendcounts, displs, local_N, vcutoff*cutoff*L)    
 
 
     ! ~ Memmory deallocation ~

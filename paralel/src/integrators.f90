@@ -77,7 +77,7 @@ contains
         rnew(:,:) = r(:, imin:imax)
         local_MSD = 0.0d0
 
-        call compute_vlist(L, r, vcutoff*cutoff, imin, imax, vlist)
+        call compute_vlist(L, r, vcutoff, imin, imax, vlist)
 
         call g_r(local_gdr, r, 1_i64, gdr_num_bins, L, cutoff, imin, imax, vlist)
 
@@ -148,7 +148,7 @@ contains
                 if (irank == 0) write(output_unit, '(1x,i0)', advance='no') (100*i)/N_steps
             end if
 
-            if (update_vlist(displacement, vcutoff*cutoff)) then
+            if (update_vlist(displacement, vcutoff)) then
                 call compute_vlist(L, r, 1.05_DP*cutoff, imin, imax, vlist)
                 !write(output_unit, '(A,I2,A,I9,A,F12.8)') 'Worker ', irank, ' updating verlet list at step', i, &
                 !' Mean number of neighbours per atom: ', &
