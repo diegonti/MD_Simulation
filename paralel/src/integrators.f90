@@ -84,7 +84,7 @@ contains
             !write(output_unit,"(a)",advance='no') "Completed (%): "
         end if
 
-        call MPI_Barrier(MPI_COMM_WORLD, ierror)
+        ! call MPI_Barrier(MPI_COMM_WORLD, ierror)
 
         do i = 1, N_steps
             
