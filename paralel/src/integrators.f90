@@ -15,7 +15,7 @@ module integrators
 contains
 
     subroutine mainLoop(log_unit,traj_unit,rdf_unit,msd_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,&
-        gdr_num_bins,n_sweeps,r,v,write_log, write_pos, irank, imin, imax, sendcounts, displs, local_N)
+        gdr_num_bins,n_sweeps,r,v,write_log, write_pos, irank, imin, imax, sendcounts, displs, local_N, vcutoff)
         ! Main Simulation Loop
         !
         ! Args:
@@ -30,6 +30,7 @@ contains
         !   cutoff      (REAL64)    : Cutoff distance for the interaction (<0.5L).
         !   gdr_num_bins(INT64)     : Number of bins for calculating RDF.
         !   n_sweeps    (INT64)     : Number of sweeps to compute for the MSD calculation.
+        !   vcutoff     (REAL64)    : Cuttof for the verlet list buffer zone.
         ! 
         ! Inout:
         !    r      (REAL64[3,N]) : positions of all N particles, in reduced units.
@@ -39,7 +40,7 @@ contains
         integer(kind=i64), intent(in)                :: log_unit, traj_unit, rdf_unit, msd_unit, N_steps, gdr_num_bins, &
                                                         n_sweeps, write_log, write_pos, imin, imax, local_N
         integer(kind=i32), intent(in)                :: irank
-        real(kind=dp), intent(in)                    :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt
+        real(kind=dp), intent(in)                    :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt,vcutoff
         real(kind=dp), dimension(:,:), intent(inout) :: r,v
         integer(kind=i32), dimension(:), intent(in)  :: sendcounts, displs
 
@@ -76,7 +77,7 @@ contains
         rnew(:,:) = r(:, imin:imax)
         local_MSD = 0.0d0
 
-        call compute_vlist(L, r, 1.1_DP*cutoff, imin, imax, vlist)
+        call compute_vlist(L, r, vcutoff*cutoff, imin, imax, vlist)
 
         call g_r(local_gdr, r, 1_i64, gdr_num_bins, L, cutoff, imin, imax, vlist)
 
@@ -147,7 +148,7 @@ contains
                 if (irank == 0) write(output_unit, '(1x,i0)', advance='no') (100*i)/N_steps
             end if
 
-            if (update_vlist(displacement, 1.05_DP*cutoff)) then
+            if (update_vlist(displacement, vcutoff*cutoff)) then
                 call compute_vlist(L, r, 1.05_DP*cutoff, imin, imax, vlist)
                 !write(output_unit, '(A,I2,A,I9,A,F12.8)') 'Worker ', irank, ' updating verlet list at step', i, &
                 !' Mean number of neighbours per atom: ', &
@@ -173,7 +174,7 @@ contains
         do i = 1, gdr_num_bins
             call MPI_Reduce(local_gdr(i), gdr(i), 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
         end do
-        call MPI_REDUCE(local_MSD, v_MSD, N_steps, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+        ! call MPI_REDUCE(local_MSD, v_MSD, N_steps, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
         
         call writeRDF(gdr,rdf_unit,L,dr,lj_sigma,N,N_steps)
         call writeMSD(v_MSD, msd_unit, n_sweeps, write_log, lj_sigma, lj_epsilon, dt, mass)

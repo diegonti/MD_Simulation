@@ -11,9 +11,11 @@
   density = 0.1,                ! Density [g/mL]
   cell_type = "sc",             ! Initial positions cell (sc,bcc,fcc)
   init_velocities = "bimodal",  ! Initial velocities (zero, bimodal)
-  ! The number of particles must follow the formula n_particles = f*M^3
-  ! where f is the number of atoms in the selected cell and M an integer.
-  ! f(sc)=1, f(bcc)=2, f(fcc)=4
+                                ! The number of particles must follow the formula n_particles = f*M^3
+                                ! where f is the number of atoms in the selected cell and M an integer.
+                                ! f(sc)=1, f(bcc)=2, f(fcc)=4
+  cutoff = 0.4                  ! Cut-off for the energy and force potential truncation
+  vlcutoff = 0.6                 ! Cut-off to construct the verlet list buffer zone
 
   ! I/O variables
   sim_name = "simulation",    ! Simulation name
