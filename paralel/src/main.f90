@@ -17,9 +17,9 @@ program main
     ! Scalar variables
     integer(kind=i32) :: status_cli
     integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, n_sweeps, &
-    write_frame, log_unit, traj_unit, rdf_unit, msd_unit, d
+                         write_frame, log_unit, traj_unit, rdf_unit, msd_unit
     real(kind=dp)     :: init_time, end_time, density, L, a, T, lj_epsilon, lj_sigma, mass, dt, &
-    andersen_nu
+                         andersen_nu, cutoff, vcutoff
     integer, parameter:: seed_number = 165432156
     integer           :: state_size
 
@@ -63,7 +63,8 @@ program main
         call read_nml(param_file=nml_path, lj_epsilon=lj_epsilon, lj_sigma=lj_sigma, mass=mass, timestep=dt, &
         density=density, andersen_nu=andersen_nu, n_particles=N, n_steps=n_steps, write_file=write_file, &
         write_stats=write_stats, gdr_num_bins=gdr_num_bins, n_sweeps=n_sweeps, write_frame=write_frame,  &
-        sim_name=sim_name, cell_type=cell_type, init_velocities=init_vel, temperature=T)
+        sim_name=sim_name, cell_type=cell_type, init_velocities=init_vel, temperature=T, cutoff=cutoff, &
+        vlcutoff=vcutoff)
         
         write(output_unit, '(A)') 'Successfully loaded parameter file, starting simulation'
 
@@ -106,6 +107,8 @@ program main
     call MPI_Bcast(density, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(andersen_nu, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(T, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(cutoff, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(vcutoff, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     
     ! CHARACTER broadcasting
     call MPI_Bcast(cell_type, 2048, MPI_CHARACTER, MASTER, MPI_COMM_WORLD, ierror)
@@ -142,8 +145,8 @@ program main
     !end do
 
     call mainLoop(log_unit, traj_unit, rdf_unit, msd_unit, lj_epsilon, lj_sigma, mass, &
-    n_steps, dt, L, T, andersen_nu, 0.5_dp*L, gdr_num_bins, n_sweeps, r, v, write_stats, &
-    write_frame, taskid, imin, imax, sendcounts, displs, local_N)    
+    n_steps, dt, L, T, andersen_nu, cutoff*L, gdr_num_bins, n_sweeps, r, v, write_stats, &
+    write_frame, taskid, imin, imax, sendcounts, displs, local_N, vcutoff*cutoff*L)    
 
 
     ! ~ Memmory deallocation ~

@@ -15,7 +15,7 @@ module integrators
 contains
 
     subroutine mainLoop(log_unit,traj_unit,rdf_unit,msd_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,&
-        gdr_num_bins,n_sweeps,r,v,write_log, write_pos, irank, imin, imax, sendcounts, displs, local_N)
+        gdr_num_bins,n_sweeps,r,v,write_log, write_pos, irank, imin, imax, sendcounts, displs, local_N, vcutoff)
         ! Main Simulation Loop
         !
         ! Args:
@@ -30,6 +30,7 @@ contains
         !   cutoff      (REAL64)    : Cutoff distance for the interaction (<0.5L).
         !   gdr_num_bins(INT64)     : Number of bins for calculating RDF.
         !   n_sweeps    (INT64)     : Number of sweeps to compute for the MSD calculation.
+        !   vcutoff     (REAL64)    : Cuttof for the verlet list buffer zone.
         ! 
         ! Inout:
         !    r      (REAL64[3,N]) : positions of all N particles, in reduced units.
@@ -39,7 +40,7 @@ contains
         integer(kind=i64), intent(in)                :: log_unit, traj_unit, rdf_unit, msd_unit, N_steps, gdr_num_bins, &
                                                         n_sweeps, write_log, write_pos, imin, imax, local_N
         integer(kind=i32), intent(in)                :: irank
-        real(kind=dp), intent(in)                    :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt
+        real(kind=dp), intent(in)                    :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt,vcutoff
         real(kind=dp), dimension(:,:), intent(inout) :: r,v
         integer(kind=i32), dimension(:), intent(in)  :: sendcounts, displs
 
@@ -59,7 +60,6 @@ contains
 
         allocate(r0(3,N))
         allocate(rold(3,N))
-        allocate(rnew(3,local_N))
         allocate(F(3,N))
         allocate(gdr(gdr_num_bins))
         allocate(local_gdr(gdr_num_bins))
@@ -73,10 +73,9 @@ contains
         rold = r
         r = r - (L / 2.0_dp)
         !r0(:,:) = r(:,:)  ! Saving initial configuration (for MSD)
-        rnew(:,:) = r(:, imin:imax)
         local_MSD = 0.0d0
 
-        call compute_vlist(L, r, 1.1_DP*cutoff, imin, imax, vlist)
+        call compute_vlist(L, r, vcutoff, imin, imax, vlist)
 
         call g_r(local_gdr, r, 1_i64, gdr_num_bins, L, cutoff, imin, imax, vlist)
 
@@ -85,23 +84,20 @@ contains
             !write(output_unit,"(a)",advance='no') "Completed (%): "
         end if
 
-        call MPI_Barrier(MPI_COMM_WORLD, ierror)
+        ! call MPI_Barrier(MPI_COMM_WORLD, ierror)
 
         do i = 1, N_steps
             
             time = real(i, kind=dp)*dt
             !choose integrator depending on user?
             ! call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
-            call vv_integrator(r, v, cutoff, L, dt, imin, imax, vlist)
+            call vv_integrator(r, v, cutoff, L, dt, imin, imax, vlist, displacement)
             ! call euler()
             call vel_Andersen(v,nu,T, imin, imax)
 
             call g_r(local_gdr, r, 2_i64, gdr_num_bins, L, cutoff, imin, imax, vlist)
             
             ! r = rnew
-            displacement(1, :) = displacement(1,:) + (r(1, imin:imax) - rnew(1, :))
-            displacement(2, :) = displacement(2,:) + (r(2, imin:imax) - rnew(2, :))
-            displacement(3, :) = displacement(3,:) + (r(3, imin:imax) - rnew(3, :))
 
             if (i <= n_sweeps) then
                 time_r(i,:,:) = r
@@ -147,7 +143,7 @@ contains
                 if (irank == 0) write(output_unit, '(1x,i0)', advance='no') (100*i)/N_steps
             end if
 
-            if (update_vlist(displacement, 1.05_DP*cutoff)) then
+            if (update_vlist(displacement, vcutoff)) then
                 call compute_vlist(L, r, 1.05_DP*cutoff, imin, imax, vlist)
                 !write(output_unit, '(A,I2,A,I9,A,F12.8)') 'Worker ', irank, ' updating verlet list at step', i, &
                 !' Mean number of neighbours per atom: ', &
@@ -166,21 +162,18 @@ contains
                 MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
             end do
 
-            rnew(:, :) = r(:, imin:imax)
-
         end do
 
         do i = 1, gdr_num_bins
             call MPI_Reduce(local_gdr(i), gdr(i), 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
         end do
-        call MPI_REDUCE(local_MSD, v_MSD, N_steps, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+        ! call MPI_REDUCE(local_MSD, v_MSD, N_steps, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
         
         call writeRDF(gdr,rdf_unit,L,dr,lj_sigma,N,N_steps)
         call writeMSD(v_MSD, msd_unit, n_sweeps, write_log, lj_sigma, lj_epsilon, dt, mass)
 
         deallocate(r0)
         deallocate(rold)
-        deallocate(rnew)
         deallocate(F)
         deallocate(vlist)
         deallocate(v_MSD)
@@ -233,7 +226,7 @@ contains
     end subroutine verlet_step
 
 
-    subroutine vv_integrator(positions, velocities, cutoff, L, dt, imin, imax, vlist)
+    subroutine vv_integrator(positions, velocities, cutoff, L, dt, imin, imax, vlist, dsp)
         !
         !  Subroutine to update the positions of all particles using the Velocity Verlet
         ! algorithm. 
@@ -244,13 +237,14 @@ contains
         !    cutoff          (REAL64) : cutoff value of the interaction.
         !    L               (REAL64) : length of the sides of the box.
         !    dt              (REAL64) : value of the integration timestep.
+        !    dsp  (REAL64[3,local_N]) : Accumulated displacement for each particle in charge for each rank
         
         ! Returns:
         !    positions  (REAL64[3,N]) : positions of all N particles, in reduced units.
         !    velocities (REAL64[3,N]) : velocities of all N partciles, in reduced units.
 
         implicit none
-        double precision, dimension(:,:), intent(inout)      :: positions, velocities
+        double precision, dimension(:,:), intent(inout)      :: positions, velocities, dsp
         double precision, intent(in)                         :: cutoff, L, dt
         integer(kind=i64), intent(in)                        :: imin, imax
         integer(kind=i64),dimension(:), intent(in)           :: vlist
@@ -259,13 +253,16 @@ contains
 
         call calc_vdw_force(positions, cutoff, L, forces, imin, imax, vlist)
         
-        positions = positions + (dt*velocities) + (0.5d0*dt*dt*forces)
+        dsp(:, :) = dsp(:, :) - positions(:, imin:imax)
+        positions(:, imin:imax) = positions(:, imin:imax) + (dt*velocities(:, imin:imax)) + (0.5d0*dt*dt*forces(:, imin:imax))
+        dsp(:, :) = dsp(:, :) + positions(:, imin:imax)
+
         call PBC(positions, L)
 
-        velocities = velocities + (0.5d0*dt*forces)
+        velocities(:, imin:imax) = velocities(:, imin:imax) + (0.5d0*dt*forces(:, imin:imax))
 
         call calc_vdw_force(positions, cutoff, L, forces, imin, imax, vlist)
-        velocities = velocities + (0.5d0*dt*forces)
+        velocities(:, imin:imax) = velocities(:, imin:imax) + (0.5d0*dt*forces(:, imin:imax))
 
     end subroutine vv_integrator
 
