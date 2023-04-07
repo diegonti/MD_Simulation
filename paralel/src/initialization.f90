@@ -108,7 +108,7 @@ module initialization
         k = 0
         do I = 1, numproc
             ! The extra particles (if any) will go to the first counts
-            if (I < chunk_extra+1) then
+            if (I > (numproc - chunk_extra)) then
                 sendcounts(I) = chunk + 1
             else
                 sendcounts(I) = chunk

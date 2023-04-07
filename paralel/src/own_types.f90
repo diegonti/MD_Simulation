@@ -29,6 +29,7 @@ module own_types_mod
         real(kind=dp)       :: box           ! Size of the box
         
         ! Analysis variables
+        integer(kind=i64)   :: n_sweeps
         integer(kind=i64)   :: gdr_num_bins
         real(kind=dp)       :: gdr_max_dist
     end type 

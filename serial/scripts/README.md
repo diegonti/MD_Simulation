@@ -6,7 +6,7 @@ Here are all the scripts used by the program to compute the statistics of the ou
 
 Script to compute the statistics (average, $\langle x \rangle$, standard deviation (STD, $\sigma$) and autocorrelation time, $\tau$) of the raw results of the simulation. Uses the Block Average method to compute the stats in blocks, while the STD vs. block size ($m$) is fitted to a exponential function $\sigma(m) = a-be^{-m/\tau}$, where the $\sigma$ and $\tau$ are gathered.
 
-Returns an output file, `name_stats.py`, with the statistical parameters ($\langle x \rangle$, $\sigma$ and $\tau$)), diffusion coeffitient ($D$) and fitting parameters ($a, b, c$) and also plots of the statistichal error ($\sigma$) vs. the block size ($m$).
+Returns an output file, `name_stats.py`, with the statistical parameters ($\langle x \rangle$, $\sigma$ and $\tau$), diffusion coeffitient ($D$) and fitting parameters ($a, b, c$) and also plots of the statistichal error ($\sigma$) vs. the block size ($m$).
 
 The script accepts several flags for running:
 ```
@@ -30,7 +30,7 @@ The script can be executed with the same flags as before:
 ```
 $ python3 visualization.py [-h] [-t] [-ip input_path] [-op output_path] [-s start] [-f final]
 ```
-Altough now this one is used if a GIF file of the trajectory wants to be created:
+Altough now the following one is used if a GIF file of the trajectory wants to be created:
 ```
 [-t] To create a trajectory.gif file of the simulation trajectory (for large trajectories it may take some time).
 ```
