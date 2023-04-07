@@ -16,20 +16,20 @@ program main
 
     ! Scalar variables
     integer(kind=i32) :: status_cli
-    integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, write_frame, &
-    log_unit, traj_unit, rdf_unit
+    integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, n_sweeps, &
+                         write_frame, log_unit, traj_unit, rdf_unit, msd_unit
     real(kind=dp)     :: init_time, end_time, density, L, a, T, lj_epsilon, lj_sigma, mass, dt, &
-    andersen_nu
+                         andersen_nu, cutoff, vcutoff
     integer, parameter:: seed_number = 165432156
     integer           :: state_size
 
     ! String variables
-    character(len=2048) :: nml_path, sim_name, log_name, traj_name, rdf_name
+    character(len=2048) :: nml_path, sim_name, log_name, traj_name, rdf_name, msd_name
     character(len=2048) :: cell_type, init_vel
 
     ! MPI memory definition
     integer, parameter      :: MASTER = 0
-    integer                 :: taskid, ierror, numproc, request
+    integer                 :: taskid, ierror, numproc
     integer(kind=i64)       :: imin, imax, local_N
     integer,  allocatable, dimension(:) :: sendcounts, displs
 
@@ -62,8 +62,9 @@ program main
 
         call read_nml(param_file=nml_path, lj_epsilon=lj_epsilon, lj_sigma=lj_sigma, mass=mass, timestep=dt, &
         density=density, andersen_nu=andersen_nu, n_particles=N, n_steps=n_steps, write_file=write_file, &
-        write_stats=write_stats, gdr_num_bins=gdr_num_bins, write_frame=write_frame, sim_name=sim_name, &
-        cell_type=cell_type, init_velocities=init_vel, temperature=T)
+        write_stats=write_stats, gdr_num_bins=gdr_num_bins, n_sweeps=n_sweeps, write_frame=write_frame,  &
+        sim_name=sim_name, cell_type=cell_type, init_velocities=init_vel, temperature=T, cutoff=cutoff, &
+        vlcutoff=vcutoff)
         
         write(output_unit, '(A)') 'Successfully loaded parameter file, starting simulation'
 
@@ -82,6 +83,10 @@ program main
 
         rdf_name = trim(sim_name) // "_rdf.log"
         open(newunit=rdf_unit, file=trim(rdf_name), access='sequential', action='write', &
+        status='replace', form='formatted')
+        
+        msd_name = trim(sim_name) // "_msd.log"
+        open(newunit=msd_unit, file=trim(msd_name), access='sequential', action='write', &
         status='replace', form='formatted')
 
     end if
@@ -102,10 +107,12 @@ program main
     call MPI_Bcast(density, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(andersen_nu, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(T, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(cutoff, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(vcutoff, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     
     ! CHARACTER broadcasting
-    !call MPI_Bcast(cell_type, 1, MPI_CHAR, MASTER, MPI_COMM_WORLD, ierror)
-    !call MPI_Bcast(init_vel, 1, MPI_CHAR, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(cell_type, 2048, MPI_CHARACTER, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(init_vel, 2048, MPI_CHARACTER, MASTER, MPI_COMM_WORLD, ierror)
 
     ! ~ Memmory allocation ~
     allocate(r(3,N))
@@ -115,6 +122,9 @@ program main
 
     ! ~ Initialization of the system ~
     call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
+
+    !cell_type = 'sc'
+    !init_vel = 'bimodal'
     call getInitialParams(trim(cell_type),N,density,M,L,a)
 
     call divide_positions(taskid,numproc,N, sendcounts,displs,imin,imax,local_N)
@@ -124,8 +134,19 @@ program main
 
 
     ! ~ Starting the trajectory of the system ~
-    call mainLoop(log_unit, traj_unit, rdf_unit, lj_epsilon, lj_sigma, mass, &
-    n_steps, dt, L, T, andersen_nu, 0.5_dp*L, gdr_num_bins, r, v, write_stats, write_frame)    
+
+    !do d = 1, 3
+    !    call MPI_ALLGATHERV(r(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, r(d,:), sendcounts, displs, &
+    !    MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
+        
+    !    call MPI_ALLGATHERV(v(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, v(d,:), sendcounts, displs, &
+    !    MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
+
+    !end do
+
+    call mainLoop(log_unit, traj_unit, rdf_unit, msd_unit, lj_epsilon, lj_sigma, mass, &
+    n_steps, dt, L, T, andersen_nu, cutoff*L, gdr_num_bins, n_sweeps, r, v, write_stats, &
+    write_frame, taskid, imin, imax, sendcounts, displs, local_N, vcutoff*cutoff*L)    
 
 
     ! ~ Memmory deallocation ~

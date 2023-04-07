@@ -1,5 +1,5 @@
 """
-Script for plotting the results of the output data from the MD runs.
+Script for plotting the results of the output data from the MD runs (in parallel).
 Plots Energies, Temperature, Pressure, MSD and RDF.
 
 Use: $ python3 visualization.py -ip input_path -op output_path -s start -f final
@@ -12,13 +12,15 @@ Diego Ontiveros
 import os
 import time as cpu_time
 from argparse import ArgumentParser, Namespace
+import multiprocessing as mp
 
 import numpy as np
 import matplotlib.pyplot as plt
 to = cpu_time.time()
 
 
-def makePlot(t,lines:list[np.ndarray],colours:list[str],labels:list[str],file_name:str,start=None,finish=None,save=True,**kwargs):
+# def makePlot(args:dict,t,lines:list[np.ndarray],colours:list[str],labels:list[str],file_name:str,start=None,finish=None,save=True,**kwargs):
+def makePlot(kwargs:dict):
     """General function to make a plot of output line (or lines) and save the image.
 
     Parameters
@@ -38,6 +40,14 @@ def makePlot(t,lines:list[np.ndarray],colours:list[str],labels:list[str],file_na
     `fig` : Drawn Figure.
     `ax` : Drawn Axis.
     """
+    t = kwargs.get("t")
+    lines = kwargs.get("lines")
+    colours = kwargs.get("colours"); labels = kwargs.get("labels")
+    file_name = kwargs.get("file_name")
+    start = kwargs.get("start",None); finish = kwargs.get("finish",None)
+    fit = kwargs.get("fit",False)
+    save = kwargs.get("save",True)
+
 
     if not isinstance(lines,list): lines, colours, labels = [lines],[colours],[labels]
 
@@ -52,7 +62,14 @@ def makePlot(t,lines:list[np.ndarray],colours:list[str],labels:list[str],file_na
     ax.set_ylabel(kwargs.get("ylabel",None))
     ax.legend()
     fig.tight_layout()
+
+    if fit:
+        a,b = np.polyfit(t[start:finish],lines[0][start:finish],deg=1)     # linear fit to ax + b
+        D = a/6  * 1e12 /1e20 # (Diffusion coeffitient in m2/s)
+        ax.plot(t[start:finish],a*t[start:finish]+b,"k:",alpha=0.75)
+
     if save: fig.savefig(opath+file_name,dpi=600)
+    plt.close(fig)
 
     return fig,ax
 
@@ -80,46 +97,77 @@ if __name__ == "__main__":
     except FileExistsError: pass
     print("Making Plots...")
     
-    # Loading data from files
+    # Loading data from files                           #! Faster way? (pandas, pure Python)
     data = np.loadtxt(ipath,skiprows=1).T     			# Thermodynamic data
-    t,E,Epot,Ekin,Tinst,P,MSD,p = data      					# Getting each parameter
+    t,E,Epot,Ekin,Tinst,P,p = data      			# Getting each parameter
     
     dataRDF = np.loadtxt(sim_name+"_rdf.log",skiprows=0).T
     r,RDF = dataRDF
 
-    # Energies Plot
-    makePlot(t,[Ekin,Epot,E],["r","b","k"],["$E_{kin}$","$E_{pot}$","$E$"],
-            file_name="energies.png",
-            xlabel="Time (ps)", ylabel="Energy (kJ/mol)")
+    dataMSD = np.loadtxt(sim_name+"_msd.log",skiprows=0).T
+    t2,MSD = dataMSD
 
-    # Temperature Plot
-    makePlot(t,Tinst,"r","$T_{inst}$",
-            file_name="temperature.png",
-            xlabel="Time (ps)", ylabel="Temperature (K)")
+    # Plotting parameters for each plot
+    E_params = {
+        "t": t,
+        "lines":[Ekin,Epot,E],
+        "colours":["r","b","k"],
+        "labels":["$E_{kin}$","$E_{pot}$","$E$"],
+        "file_name":"energies.png", 
+        "start":start,"finish":finish,
+        "xlabel":"Time (ps)", "ylabel":"Energy (kJ/mol)"
+    }
 
-    # Pressure Plot
-    makePlot(t,P,"purple","P",
-            file_name="pressure.png",
-            xlabel="Time (ps)",ylabel="Pressure (Pa)")
+    T_params = {
+        "t": t,
+        "lines":Tinst,
+        "colours":"r",
+        "labels":"$T_{inst}$",
+        "file_name":"temperature.png", 
+        "start":start,"finish":finish,
+        "xlabel":"Time (ps)", "ylabel":"Temperature (K)"
+    }
 
-    # MSD Plot
-    start,finish = None,None
-    figMSD,axMSD = makePlot(t,MSD,"green","MSD",
-            file_name="MSD.png", save=False,
-            xlabel="Time (ps)", ylabel="MSD ($\AA^2$)")
-    a,b = np.polyfit(t[start:finish],MSD[start:finish],deg=1)     # linear fit to ax + b
-    D = a/6  * 1e12 /1e20 # (Diffusion coeffitient in m2/s)
-    #! Show D in plot?
+    P_params = {
+        "t": t,
+        "lines":P,
+        "colours":"purple",
+        "labels":"$P$",
+        "file_name":"pressure.png", 
+        "start":start,"finish":finish,
+        "xlabel":"Time (ps)", "ylabel":"Pressure (Pa)"
+    }
 
-    axMSD.plot(t[start:finish],a*t[start:finish]+b,"k:",alpha=0.75)
-    figMSD.savefig(opath+"MSD.png",dpi=600)
+    MSD_params = {
+        "t": t,
+        "lines":MSD,
+        "colours":"green",
+        "labels":"MSD",
+        "file_name":"MSD.png", 
+        "start":None,"finish":None, "fit":True,
+        "xlabel":"Time (ps)", "ylabel":"MSD ($\AA^2$)"
+    }
 
-    # RDF Plot
-    makePlot(r,RDF,"red","RDF",
-             file_name="RDF.png",
-             xlabel="RDF",ylabel="r ($\AA$)")
+
+    RDF_params = {
+        "t": r,
+        "lines":RDF,
+        "colours":"r",
+        "labels":"RDF$",
+        "file_name":"RDF.png", 
+        "start":start,"finish":finish,
+        "xlabel":"r ($\AA$)", "ylabel":"RDF"
+    }
+
+    params = [E_params,T_params,P_params,MSD_params,RDF_params]
+
+    # Plotting in parallel
+    pool = mp.Pool(len(params))
+    pool.map(makePlot,params)
+    pool.close()
+    pool.join()
+
     
-
     # Trajectory
     if make_trajectory:
         from ase import io
@@ -136,5 +184,5 @@ if __name__ == "__main__":
                 print(f"ase could not read the {traj_name} file. Make sure the format is correct (as .xyz).")
         else: print("Structure trajectory not found. Make sure the file was created.")
 
-tf = cpu_time.time()
-print(f"\nProcess finished in {tf-to:.2f}s.\n")
+    tf = cpu_time.time()
+    print(f"\nProcess finished in {tf-to:.2f}s.\n")

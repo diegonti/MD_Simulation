@@ -1,9 +1,9 @@
 module potential_m
     use, intrinsic :: iso_fortran_env, only: dp => real64, i64 => int64
-    use periodic_bc, only: pbc
+    use            :: periodic_bc,     only: pbc
     implicit none
 
-    public :: calc_pressure, calc_KE, calc_vdw_pbc, calc_vdw_force
+    public :: calc_pressure, calc_KE, calc_vdw_pbc, calc_vdw_force, update_vlist
 
 contains
 
@@ -80,7 +80,7 @@ contains
 
             end do
 
-            counter = counter + nneigh
+            counter = counter + nneigh + 1_i64
 
         end do
         
@@ -186,7 +186,7 @@ contains
 
             end do
 
-            counter = counter + nneigh
+            counter = counter + nneigh + 1_i64
 
         end do
     end function calc_vdw_pbc
@@ -245,21 +245,20 @@ contains
                 dist = (rij(1,1)**2) + (rij(2,1)**2) + (rij(3,1)**2)
                 
                 if (dist < cutoff) then
-                    
+                    ! print *, i, j, dist
                     ! Calculem la forc entre particula i, j
-
                     forces(1, i) = forces(1, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(1,1)
                     forces(2, i) = forces(2, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(2,1)
                     forces(3, i) = forces(3, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(3,1)
 
-                    forces(1, j) = forces(1, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(1,1)
-                    forces(2, j) = forces(2, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(2,1)
-                    forces(3, j) = forces(3, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(3,1)
+                    !forces(1, j) = forces(1, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(1,1)
+                    !forces(2, j) = forces(2, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(2,1)
+                    !forces(3, j) = forces(3, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(3,1)
 
                 end if
             end do
 
-            counter = counter + nneigh
+            counter = counter + nneigh + 1_i64
 
         end do
     end subroutine calc_vdw_force
@@ -341,30 +340,28 @@ contains
         integer(kind=i64), dimension(:), intent(out) :: vlist
         ! Internal variables
         integer(kind=i64)                            :: np, i, j, nneigh, pos
-        real(kind=dp), dimension(1, 3)                  :: rij
+        real(kind=dp), dimension(3, 1)               :: rij
         real(kind=dp)                                :: dist2, cutoff2
 
         np = size(r, dim=2, kind=i64)
         cutoff2 = cutoffv * cutoffv
 
-        pos = 1
+        pos = 1_I64
 
         do i = imin, imax
 
-            nneigh = 0
+            nneigh = 0_I64
 
             do j = 1, np
 
                 if (i == j) cycle
 
-                rij(1, :) = r(:, i) - r(:, j)
-
+                rij(:, 1) = r(:, i) - r(:, j)
                 call pbc(rij, L)
-
-                dist2 = rij(1, 1)**2 + rij(1, 2)**2 + rij(1, 3)**2
+                dist2 = rij(1, 1)**2 + rij(2, 1)**2 + rij(3, 1)**2
 
                 if (dist2 <= cutoff2) then
-                    nneigh = nneigh + 1
+                    nneigh = nneigh + 1_I64
                     vlist(pos + nneigh) = j
                 end if
 
@@ -372,9 +369,33 @@ contains
 
             vlist(pos) = nneigh
             pos = pos + nneigh + 1_i64
-
         end do
 
     end subroutine compute_vlist
+
+    function update_vlist(displacement, rmax) result(update)
+        ! Author: Marc Alsina <marcalsinac@gmail.com>
+        ! Subroutine that computes if the verlet list has to be updated,
+        ! based on atoms displacements
+
+        ! The actual criteria is to update the verlet list if the displacement
+        ! of each particle is greater or equal half times the buffer cutoff.
+        !
+        ! Args:
+        !   displacement (REAL64[3,N]): Displacement of each atom
+        !   rmax         (REAL64)     : Verlet list cutoff
+        !
+        ! Returns:
+        !   update       (LOGICAL)    : Update or not the verlet list
+        implicit none
+        ! In/Out variables
+        real(kind=dp), dimension(:, :), intent(in) :: displacement
+        real(kind=dp), intent(in)                  :: rmax
+        logical                                    :: update
+
+
+        update = any(displacement >= rmax * 0.5_DP)
+    
+    end function update_vlist
 
 end module potential_m

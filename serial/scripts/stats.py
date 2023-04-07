@@ -192,7 +192,7 @@ if __name__=="__main__":
 		n_tot = len(xi)
 		
 		# Calculate Block Averages (Binning)
-		m_points_i,blockVar_i,blockMean_i = blockAverage(xi[start:],maxBlockSize=int(n_tot/100))
+		m_points_i,blockVar_i,blockMean_i = blockAverage(xi[start:finish],maxBlockSize=int(n_tot/100))
 
 		# Calulate fitting for the Block_STD computed
 		params_i, cov_i = fit(fit_function,m_points_i,np.sqrt(blockVar_i))      # Fitting --> Getting optimized params
