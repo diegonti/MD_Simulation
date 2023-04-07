@@ -27,6 +27,7 @@
 
   ! Analysis dependent variables
   gdr_num_bins = 100        ! Number of bins for RDF calculation
+  n_sweeps = 200	    ! Number of sweeps to compute for the MSD
 
 /
 

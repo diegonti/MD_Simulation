@@ -82,10 +82,13 @@ if __name__ == "__main__":
     
     # Loading data from files
     data = np.loadtxt(ipath,skiprows=1).T     			# Thermodynamic data
-    t,E,Epot,Ekin,Tinst,P,MSD,p = data      					# Getting each parameter
+    t,E,Epot,Ekin,Tinst,P,p = data      					# Getting each parameter
     
     dataRDF = np.loadtxt(sim_name+"_rdf.log",skiprows=0).T
     r,RDF = dataRDF
+
+    dataMSD = np.loadtxt(sim_name+"_msd.log",skiprows=0).T
+    t2,MSD = dataMSD
 
     # Energies Plot
     makePlot(t,[Ekin,Epot,E],["r","b","k"],["$E_{kin}$","$E_{pot}$","$E$"],
@@ -104,7 +107,7 @@ if __name__ == "__main__":
 
     # MSD Plot
     start,finish = None,None
-    figMSD,axMSD = makePlot(t,MSD,"green","MSD",
+    figMSD,axMSD = makePlot(t2,MSD,"green","MSD",
             file_name="MSD.png", save=False,
             xlabel="Time (ps)", ylabel="MSD ($\AA^2$)")
     a,b = np.polyfit(t[start:finish],MSD[start:finish],deg=1)     # linear fit to ax + b

@@ -3,7 +3,7 @@ module integrators
     use periodic_bc, only: PBC
     use potential_m, only: calc_KE, calc_pressure, calc_vdw_force, calc_vdw_pbc, calc_Tinst, compute_com_momenta
     use simulation,  only: MSD, g_r
-    use writers_m,   only: writePositions, writeRdf, writeSystem
+    use writers_m,   only: writePositions, writeRdf, writeSystem, writeMSD
     use testing
 
     implicit none
@@ -12,8 +12,8 @@ module integrators
 
 contains
 
-    subroutine mainLoop(log_unit,traj_unit,rdf_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,gdr_num_bins,r,v, &
-        write_log, write_pos)
+    subroutine mainLoop(log_unit,traj_unit,rdf_unit,msd_unit,lj_epsilon,lj_sigma,mass,N_steps,dt,L,T,nu,cutoff,&
+                       gdr_num_bins,n_sweeps,r,v,write_log, write_pos)
         ! Main Simulation Loop
         !
         ! Args:
@@ -27,36 +27,42 @@ contains
         !   nu          (REAL64)    : Probability for the Andersen Thermostat.
         !   cutoff      (REAL64)    : Cutoff distance for the interaction (<0.5L).
         !   gdr_num_bins(INT64)     : Number of bins for calculating RDF.
+        !   n_sweeps    (INT64)     : Number of sweeps to compute for the MSD
         ! 
         ! Inout:
         !    r      (REAL64[3,N]) : positions of all N particles, in reduced units.
         !    v      (REAL64[3,N]) : velocities of all N partciles, in reduced units.
 
         implicit none
-        integer(kind=i64), intent(in)                :: log_unit,traj_unit,rdf_unit, N_steps, gdr_num_bins, write_log, write_pos
+        integer(kind=i64), intent(in)                :: log_unit,traj_unit,rdf_unit,msd_unit,N_steps, gdr_num_bins, &
+                                                        n_sweeps, write_log, write_pos
         real(kind=dp), intent(in)                    :: lj_epsilon,lj_sigma,mass, L,cutoff,T,nu,dt
         real(kind=dp), dimension(:,:), intent(inout) :: r,v
 
-        real(kind=dp), dimension(:,:), allocatable   :: r0, rold, rnew, F
-        real(kind=dp)                                :: time, Etot,Epot,Ekin,Tinst,press,rMSD,p_com_t, dr
+        real(kind=dp), dimension(:,:), allocatable   :: rold, rnew, F
+        real(kind=dp)                                :: time, Etot,Epot,Ekin,Tinst,press,p_com_t, dr
         real(kind=dp), dimension(3)                  :: p_com
+        real(kind=dp), dimension(:), allocatable     :: v_MSD
         real(kind=dp), dimension(:,:), allocatable   :: gdr
+        real(kind=dp), dimension(:,:,:), allocatable :: time_r
         integer(kind=i64) :: i,N
 
         dr = cutoff/dble(gdr_num_bins)
         N = size(r,dim=2,kind=i64)
 
-        allocate(r0(3,N))
         allocate(rold(3,N))
         allocate(rnew(3,N))
         allocate(F(3,N))
         allocate(gdr(2,gdr_num_bins))
+        allocate(v_MSD(N_steps))
+        allocate(time_r(n_sweeps,3,N))
+
 
 
         F = 0.0_dp
         rold = r
+        v_MSD = 0.0d0
         r = r - (L / 2.0_dp)
-        r0 = r  ! Saving initial configuration (for MSD)
 
         call g_r(gdr, r, 1_i64, gdr_num_bins, L, cutoff)
 
@@ -78,13 +84,16 @@ contains
             call compute_com_momenta(v,p_com)
             p_com_t = dsqrt(dot_product(p_com,p_com))
 
-            rMSD = MSD(r,r0,L)
+            if (i <= n_sweeps) then
+                time_r(i,:,:) = r
+            end if
+            call MSD(r, time_r, L, i, n_sweeps, v_MSD)
             call g_r(gdr, r, 2_i64, gdr_num_bins, L, cutoff)
             
             ! r = rnew
 
             if (mod(i, write_log) == 0) call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,&
-            press,rMSD,p_com_t)
+            press,p_com_t)
             if (mod(i, write_pos) == 0)  call writePositions(r, traj_unit)
 
             if (mod(i, N_steps/10) == 0) then
@@ -96,11 +105,13 @@ contains
         call g_r(gdr, r, 3_i64, gdr_num_bins, L, cutoff)
 
         call writeRDF(gdr,rdf_unit, lj_sigma)
+        call writeMSD(v_MSD, msd_unit, n_sweeps, write_log, lj_sigma, lj_epsilon, dt, mass)
 
-        deallocate(r0)
         deallocate(rold)
         deallocate(rnew)
         deallocate(F)
+        deallocate(v_MSD)
+        deallocate(time_r)
 
 
     end subroutine mainLoop
