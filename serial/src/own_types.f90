@@ -31,6 +31,7 @@ module own_types_mod
         ! Analysis variables
         integer(kind=i64)   :: gdr_num_bins
         real(kind=dp)       :: gdr_max_dist
+        integer(kind=i64)   :: n_sweeps
     end type 
 
 end module

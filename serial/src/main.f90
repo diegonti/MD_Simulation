@@ -14,15 +14,15 @@ program main
 
     ! Scalar variables
     integer(kind=i32) :: status_cli
-    integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, write_frame, &
-    log_unit, traj_unit, rdf_unit
+    integer(kind=i64) :: M, N, n_steps, write_file, write_stats, gdr_num_bins, n_sweeps, &
+                         write_frame, log_unit, traj_unit, rdf_unit, msd_unit
     real(kind=dp)     :: init_time, end_time, density, L, a, T, lj_epsilon, lj_sigma, mass, dt, &
-    andersen_nu
+                         andersen_nu
     integer, parameter:: seed_number = 165432156
     integer                                      :: state_size
 
     ! String variables
-    character(len=2048) :: nml_path, sim_name, log_name, traj_name, rdf_name
+    character(len=2048) :: nml_path, sim_name, log_name, traj_name, rdf_name, msd_name
     character(len=2048) :: cell_type, init_vel
 
 
@@ -47,8 +47,8 @@ program main
 
     call read_nml(param_file=nml_path, lj_epsilon=lj_epsilon, lj_sigma=lj_sigma, mass=mass, timestep=dt, &
     density=density, andersen_nu=andersen_nu, n_particles=N, n_steps=n_steps, write_file=write_file, &
-    write_stats=write_stats, gdr_num_bins=gdr_num_bins, write_frame=write_frame, sim_name=sim_name, &
-    cell_type=cell_type, init_velocities=init_vel, temperature=T)
+    write_stats=write_stats, gdr_num_bins=gdr_num_bins, n_sweeps=n_sweeps, write_frame=write_frame, &
+    sim_name=sim_name, cell_type=cell_type, init_velocities=init_vel, temperature=T)
 
     ! Trimming character variables in order to avoid blank spaces
     sim_name = trim(sim_name)
@@ -78,6 +78,10 @@ program main
     open(newunit=rdf_unit, file=trim(rdf_name), access='sequential', action='write', &
     status='replace', form='formatted')
 
+    msd_name = trim(sim_name) // "_msd.log"
+    open(newunit=msd_unit, file=trim(msd_name), access='sequential', action='write', &
+    status='replace', form='formatted')
+
     ! ~ Initialization of the system ~
     call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
     call getInitialParams(trim(cell_type),N,density,M,L,a)
@@ -85,14 +89,15 @@ program main
     call initializeVelocities(T,v,init_vel)
 
     ! ~ Starting the trajectory of the system ~
-    call mainLoop(log_unit, traj_unit, rdf_unit, lj_epsilon, lj_sigma, mass, &
-    n_steps, dt, L, T, andersen_nu, 0.5_dp*L, gdr_num_bins, r, v, write_stats, write_frame)    
+    call mainLoop(log_unit, traj_unit, rdf_unit, msd_unit, lj_epsilon, lj_sigma, mass, &
+    n_steps, dt, L, T, andersen_nu, 0.5_dp*L, gdr_num_bins, n_sweeps, r, v, write_stats, write_frame)    
 
 
     ! ~ Closing files ~
     close(log_unit)
     close(traj_unit)
     close(rdf_unit)
+    close(msd_unit)
 
     ! ~ Memmory deallocation ~
     deallocate(r)
