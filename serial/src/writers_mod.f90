@@ -7,7 +7,7 @@ module writers_m
 
     contains
 
-    subroutine writeSystem(unit,lj_epsilon,lj_sigma,mass, time,E,Epot,Ekin,T,press,MSD,momentum)
+    subroutine writeSystem(unit,lj_epsilon,lj_sigma,mass, time,E,Epot,Ekin,T,press,momentum)
         ! Writes system data to the main output file. Changes reduced units 
         ! used in simulation to real units.
         !
@@ -20,8 +20,8 @@ module writers_m
         
         integer(kind=i64), intent(in) :: unit
         double precision, intent(in) :: lj_epsilon,lj_sigma,mass
-        double precision, intent(in) :: time,E,Epot,Ekin,T,press,MSD,momentum
-        double precision :: time_out,E_out,Epot_out,Ekin_out,T_out,press_out,MSD_out,momentum_out
+        double precision, intent(in) :: time,E,Epot,Ekin,T,press,momentum
+        double precision :: time_out,E_out,Epot_out,Ekin_out,T_out,press_out,momentum_out
         double precision :: ru_time,ru_dens,ru_dist,ru_temp,ru_E,ru_press,ru_vel,ru_mom
         double precision, parameter :: Na = 6.0221408d23
         double precision, parameter :: kb = 1.380649d-23
@@ -43,12 +43,11 @@ module writers_m
         Ekin_out = Ekin * ru_E
         T_out = T * ru_temp
         press_out = press * ru_press
-        MSD_out = MSD * ru_dist**2_i64
         momentum_out = momentum * ru_mom
 
         ! Writes to output file (coumun style)
-        write(unit,'(ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4)') time_out,&
-        E_out,Epot_out,Ekin_out,T_out,press_out,MSD_out,momentum_out
+        write(unit,'(ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4,ES18.8e4)') time_out,&
+        E_out,Epot_out,Ekin_out,T_out,press_out,momentum_out
 
     end subroutine writeSystem
 
@@ -98,6 +97,42 @@ module writers_m
         end do
 
     end subroutine writeRdf
+
+    subroutine writeMSD(v_MSD,unit,n_sweep,write_log,lj_sigma,lj_epsilon,dt,mass)
+        ! Writes positions and rdf in 2 columns.
+        !
+        ! Args:
+        !   v_MSD      (REAL64[N_steps] : Vector containig the MSD values in each dt
+        !   unit       (INT64)          : File unit to write in.
+        !   n_sweep    (INT64)          : Number of sweeps to compute for the MSD
+        !   write_log  (INT64)          : Frequency to write into file
+        !   lj_sigma   (REAL64)         : Reduced units of length
+        !   lj_epsilon (REAL64)         : Reduced units of energy
+        !   dt         (REAL64)         : Timestep
+        !   mass       (REAL64)         : mass of particle
+
+        implicit none
+        ! In/Out variables
+        double precision, intent(in), dimension(:)   :: v_MSD
+        double precision, intent(in)                 :: lj_sigma, lj_epsilon, dt, mass
+        integer(kind=i64), intent(in)                :: unit, n_sweep, write_log
+        ! Internal variables
+        integer(kind=i64)                            :: i, N
+        double precision                             :: ru_time
+
+        N = size(v_MSD, 1, i64)
+        ru_time = 1d12 * dsqrt(mass * (1d-10*lj_sigma)**2 / (1d6*lj_epsilon))
+
+        write(unit,*) 0.0d0, 0.0d0
+        do i= 1, N, write_log
+            if (i <= N-n_sweep) then
+                write(unit,*) dble(i)*dt*ru_time, lj_sigma**2 *v_MSD(i)/dble(n_sweep)
+            else
+                write(unit,*) dble(i)*dt*ru_time, lj_sigma**2 *v_MSD(i)/dble(N-i+1)
+            end if
+        end do
+
+    end subroutine writeMSD
 
 
 end module writers_m
