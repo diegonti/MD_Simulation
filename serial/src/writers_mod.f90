@@ -123,7 +123,6 @@ module writers_m
         N = size(v_MSD, 1, i64)
         ru_time = 1d12 * dsqrt(mass * (1d-10*lj_sigma)**2 / (1d6*lj_epsilon))
 
-        write(unit,*) 0.0d0, 0.0d0
         do i= 1, N, write_log
             if (i <= N-n_sweep) then
                 write(unit,*) dble(i)*dt*ru_time, lj_sigma**2 *v_MSD(i)/dble(n_sweep)
