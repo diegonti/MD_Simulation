@@ -58,16 +58,7 @@ Variables names must have sense in the context of its application, and don't use
 
 Documentation is also mandatory. Since this is a collaboration project, we have to make sure that our code can be interpreted by other humans. Therefore, we will make use of the [Google documentation style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html). The language of implementation must be done in English. It is also important in the documentation to specify the type of the data that is handeled. When matrices are involved, they will be defined as `data_type[x,y,z,...]` where x, y, z are the dimensions along the specified rank.
 
-## Task Distribution
-- Main Program
-- Readers and Writers (I/O) &rarr; Read input file, write outputs
-- Initial Conditions &rarr; Positions (SC, BCC, FCC) and Velocities (bimodal, zero)
-- Interactions &rarr; Forces, Energies (total, V, T), Pressure, Momentum
-- Integrators &rarr; Velocity Verlet, Verlet, Euler // Thermostat
-- Simulation &rarr; PBC, MIC, boxmuller, RDF, MSD
-- Data Analysis (Python) &rarr; Stats and Visualization
-
-## Builds
+### Builds
 A build is simply a compilation of the whole program. We will work on two builds:
 
 - **Debug**: Focused on the program to work, and with the minimum number of bugs as possible. Therefore, we will make use of debugging compiler options, and we will try to solve those warnings as much as possible.
