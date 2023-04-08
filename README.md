@@ -6,63 +6,74 @@ The puropose of this project is to develop a serial and pararel version of a Mol
 
 ## Table of contents
 
-- [Installing](#installing)
-- [Usage](#usage)
+- [Notes for developers](#notes-for-developers)
 - [Task Distribution](#task-distribution)
 - [Contributors](#contributors)
 
-## Installing
+## Notes for developers
+This section contains relevant information regarding the workflow for the following days. Therefore, this section is indicated for everybody who wants to contribute to this project.
 
-This project is designed to be compiled on Unix-type machines (Linux/macOS). The autorhs do not guarantee its correct compilation on Windows machines.
-
-Before starting the compilation, make sure to be using the gfortran compiler, at least version `11.3.0` or greater. Other compilers have not been tested.
-
-For the statistics and visualization scripts the following Python modules are required: `numpy`, `scypy`, `matplotlib`, `ase`. Which can be installed with:
-```
-$ pip install -r scripts/requeriments.txt
-or $ pip install module    (for each module)
-```
-
-Once meeting the requirements, `git clone` this repository, and, inside the repo folder, just do `make`. A Makefile script will be interpreted by make, and will compile all the source files.
-
-## Usage
-
-In order to use the simulator, a parameter file must be supplied as a first argument list, such as `./MDEMI.x parameters.nml`. An example of parameter input file can be found at [here](./parameters.nml).
-
-To compile the program use:
-``` 
-$ make
-```
-To run the program:
-``` 
-$ make run_serial
-```
-Once the progam has finished succesfully, the output files will be created in the parent directory. Then the statistics and visualization can be generated with:
-```
-$ make postprocess input="name_logfile.log"
-```
-Which will create an `name_stats.log` in the current directory and the plots (block average and visualization) in the `plots/` (or specified) folder. 
-
-The output folder of the plots and different flags, such as makeing a trajectory GIF or selecting the start and final frame to make the plots and statistichs can be selected adding an additional argument (optional):
-```
-$ make postprocess input="name_logfile.log" args="-op output_file -s start -f finish -t"
-```
-If wanted, the plots and visualization can be done separately with:
-```
-$ make stats input="name_logfile.log" args="-op output_file -s start -f finish"
-$ make plots input="name_logfile.log" args="-op output_file -s start -f finish -t"
+### Git workflow
+Before defining the Git workflow, it is convenient to set up the machinery:
+Start by forking and cloning the [main repository](https://github.com/Eines-Informatiques-Avancades/Project_I).
+Once done, set up the following remotes:
+```bash
+git remote add lider https://github.com/Eines-Informatiques-Avancades/Project_I.git
+git remote add origin https://github.com/_your_forked_repository.git
+git fetch lider
+git pull lider master
 ```
 
-More info about the Python scripts and their flags in [here](https://github.com/diegonti/Project_I/tree/master/scripts).
+This has to be set up only the first time.
 
-For general help about the makefile try:
-```
-$ make help
-```
-And to clean all the generated compilation files, use:
-```
-$ make clean
-```
+Now, we will follow to describe the git workflow:
+
+1. `git fetch lider && git pull lider master`
+2. Do your changes. It is important that, for each relevant change that you do, do a commit, in the following way: `git add the_file_you_modified` (as many times as files you have modified) `git commit -m "The changes you did"`. This helps 
+to keep track of the changes you are doing, if it is necessary to revert in some moment.
+2. Once you feel comfortable with the changes, **AND THE CODE COMPILES WITH THE DEFINED MAKEFILE** do a push into your github repository: `git push origin master`.
+3. Once done, open a pull request into the lider's repository, and everything is done :)
+
+_Note from the lider_: I'll try to schedule myself and accept the pull request every Monday at 12:00am.
+
+### Code
+It is important to follow a familiar set of rules in order to be consistent with the code, and therefore, avoid some painful bugs:
+
+- We will stick to the Fortran 2018 standard. Therefore, all compilations must include the `-std=f2018` flag
+- Matrices regarding positions and velocities will be structured as 3xnº particles. That is, each column will represent a vector of positions or a vector of velocities for each particle. This is not arbitrary, this is because Fortran is used to work with columns.
+- We will work in double precission. It can be either definded by the following ways:
+    ```Fortran
+    use, intrinsic   :: iso_fortran_env, only: DP => REAL64
+    
+    real(kind=DP)    :: manera_uno
+    double precision :: manera_dos
+    real*8           :: manera_tres 
+    ```
+    As well, when defining a numerical value, define its numerical type with the `_DP` or `d` delimitiers at the end of the numerical definition.
+#### Code style
+
+The indentation is mandatory in order to force readability. Remember, a piece of code is more often read than written, so try to apply this fact when you are writing your code. 
+
+Variables names must have sense in the context of its application, and don't use cryptic names.
+
+Documentation is also mandatory. Since this is a collaboration project, we have to make sure that our code can be interpreted by other humans. Therefore, we will make use of the [Google documentation style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html). The language of implementation must be done in English. It is also important in the documentation to specify the type of the data that is handeled. When matrices are involved, they will be defined as `data_type[x,y,z,...]` where x, y, z are the dimensions along the specified rank.
+
+## Task Distribution
+- Main Program
+- Readers and Writers (I/O) &rarr; Read input file, write outputs
+- Initial Conditions &rarr; Positions (SC, BCC, FCC) and Velocities (bimodal, zero)
+- Interactions &rarr; Forces, Energies (total, V, T), Pressure, Momentum
+- Integrators &rarr; Velocity Verlet, Verlet, Euler // Thermostat
+- Simulation &rarr; PBC, MIC, boxmuller, RDF, MSD
+- Data Analysis (Python) &rarr; Stats and Visualization
+
+## Builds
+A build is simply a compilation of the whole program. We will work on two builds:
+
+- **Debug**: Focused on the program to work, and with the minimum number of bugs as possible. Therefore, we will make use of debugging compiler options, and we will try to solve those warnings as much as possible.
+- **Release**: Focused on speed, we will use this build to produce results. Note that this code will start once we validate or finish the Debugging release.
+
+Recall that some smart people in an office probably located in California has spent his/her time working out on smart checking that trigger warnings when parts of our code doesn't make sense or are susceptible to doesn't work properly. Therefore, the purpose of a warning is not to flood your screen making you feel like you're hacking the CNI, but to give you some smart advises in order to avoid bugs. Of course, there are warnings, like -Wtabs, that aren't quite relevant, but others can save us from hours of painful debugging.
 
 <br>
 
