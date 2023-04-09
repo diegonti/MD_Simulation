@@ -63,7 +63,7 @@ contains
         allocate(F(3,N))
         allocate(gdr(gdr_num_bins))
         allocate(local_gdr(gdr_num_bins))
-        allocate(vlist((N * (N + 1_I64) / 2_I64) + local_N))
+        allocate(vlist(N * local_N))
         allocate(displacement(3, local_N))
         allocate(time_r(n_sweeps,3,N))
         allocate(v_MSD(N_steps))
