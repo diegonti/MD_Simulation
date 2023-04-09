@@ -59,9 +59,9 @@ contains
                 j_part = vlist(counter + neigh_idx)
 
                 ! Calculem rij
-                rij(1,1) = positions(1, i_part) - positions(1, j_part)
-                rij(2,1) = positions(2, i_part) - positions(2, j_part)
-                rij(3,1) = positions(3, i_part) - positions(3, j_part)
+                rij(:,1) = positions(1, i_part) - positions(:, j_part)
+                !rij(2,1) = positions(2, i_part) - positions(2, j_part)
+                !rij(3,1) = positions(3, i_part) - positions(3, j_part)
 
                 call pbc(rij, lenth)
                 
@@ -70,9 +70,9 @@ contains
 
                 if (dij < cutoff2) then
 
-                    fij(1) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(1,1)
-                    fij(2) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(2,1)
-                    fij(3) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(3,1)
+                    fij(:) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(:,1)
+                    !fij(2) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(2,1)
+                    !fij(3) = (48.0_dp / dij**7 - 24.0_dp / dij**4) * rij(3,1)
 
                     ! Upgredagem el valor de la pressio
                     virial = virial + dot_product(rij(:,1), fij)
@@ -165,9 +165,9 @@ contains
 
                 i = vlist(counter + neigh_idx)
 
-                rij(1,1) = pos(1, j) - pos(1, i)
-                rij(2,1) = pos(2, j) - pos(2, i)
-                rij(3,1) = pos(3, j) - pos(3, i)
+                rij(:,1) = pos(1, j) - pos(:, i)
+                !rij(2,1) = pos(2, j) - pos(2, i)
+                !rij(3,1) = pos(3, j) - pos(3, i)
                 
                 call pbc(rij, boundary)
 
@@ -236,9 +236,9 @@ contains
 
                 j = vlist(counter + neigh_idx)
                 
-                rij(1,1) = pos(1, i) - pos(1, j)
-                rij(2,1) = pos(2, i) - pos(2, j)
-                rij(3,1) = pos(3, i) - pos(3, j)
+                rij(:,1) = pos(:, i) - pos(:, j)
+                !rij(2,1) = pos(2, i) - pos(2, j)
+                !rij(3,1) = pos(3, i) - pos(3, j)
                 
                 call pbc(rij, boundary)
                 
@@ -247,9 +247,9 @@ contains
                 if (dist < cutoff) then
                     ! print *, i, j, dist
                     ! Calculem la forc entre particula i, j
-                    forces(1, i) = forces(1, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(1,1)
-                    forces(2, i) = forces(2, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(2,1)
-                    forces(3, i) = forces(3, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(3,1)
+                    forces(:, i) = forces(:, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(:,1)
+                    !forces(2, i) = forces(2, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(2,1)
+                    !forces(3, i) = forces(3, i) + (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(3,1)
 
                     !forces(1, j) = forces(1, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(1,1)
                     !forces(2, j) = forces(2, j) - (48.0_DP / dist**7 - 24.0_dp / dist**4) * rij(2,1)
