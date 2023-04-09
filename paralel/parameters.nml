@@ -5,7 +5,7 @@
   mass = 131.29,       ! [g/mol]
 
   ! Simulation related variables
-  n_steps = 50000                ! Number of simulation steps
+  n_steps = 50000               ! Number of simulation steps
   timestep = 0.025,             ! Timestep [ps]
   n_particles = 64,             ! Number of particles
   density = 0.1,                ! Density [g/mL]
@@ -14,21 +14,21 @@
                                 ! The number of particles must follow the formula n_particles = f*M^3
                                 ! where f is the number of atoms in the selected cell and M an integer.
                                 ! f(sc)=1, f(bcc)=2, f(fcc)=4
-  cutoff = 0.4,                 ! Cut-off for the energy and force potential truncation
+  cutoff = 0.4,                 ! Cut-off for the energy and force potential truncation (in fraction of box length, max 0.5)
   vlcutoff = 0.6,               ! Cut-off to construct the verlet list buffer zone
 
   ! I/O variables
   sim_name = "simulation",      ! Simulation name
   write_stats = 10,             ! Steps between each stats writing
   write_frame = 100,            ! Steps between each trajectory writing
-  write_file = 100,
+  write_file = 100,             
 
   ! Thermostat variables
   andersen_nu = 0.7,            ! Thermostat probability
   temperature = 300,            ! Temperature [K]
 
   ! Analysis dependent variables
-  gdr_num_bins = 100,        ! Number of bins for RDF calculation
-  n_sweeps = 100,	         ! Number of sweeps to compute for the MSD
+  gdr_num_bins = 100,           ! Number of bins for RDF calculation
+  n_sweeps = 100,	              ! Number of sweeps to compute for the MSD
 
 /

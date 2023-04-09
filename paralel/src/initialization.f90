@@ -120,13 +120,7 @@ module initialization
         local_N = int(sendcounts(taskid+1),kind=i64)
         imin = int(displs(taskid+1),kind=i64) + 1_i64
         imax = imin + local_N - 1_i64
-
-        ! print*,imin,imax
-        ! if (taskid==0) then
-        !     print*,displs
-        !     print*,sendcounts
-        ! end if
-        
+      
     end subroutine divide_positions
 
 

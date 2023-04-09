@@ -72,6 +72,7 @@ program main
         ! log_unit  -> file where the simulation time, energy, instant temperature, etc.. will be placed
         ! traj_name -> trajectory file, where the xyz of each snapshot is placed 
         ! rdf_name -> RDF file, where the RDF will be written 
+        ! msd_name -> MSD file, where the RDF will be written 
 
         log_name = trim(sim_name) // "_logfile.log"
         open(newunit=log_unit, file=trim(log_name), access='sequential', action='write', &
@@ -124,27 +125,14 @@ program main
 
     ! ~ Initialization of the system ~
     call changeIUnits(lj_epsilon,lj_sigma,mass,density,dt,T)
-
-    !cell_type = 'sc'
-    !init_vel = 'bimodal'
     call getInitialParams(trim(cell_type),N,density,M,L,a)
 
     call divide_positions(taskid,numproc,N, sendcounts,displs,imin,imax,local_N)
     call initializePositions(M,a,r,trim(cell_type),imin,imax,sendcounts,displs)
-
     call initializeVelocities(T,v,init_vel,imin,imax,sendcounts,displs)
 
 
     ! ~ Starting the trajectory of the system ~
-
-    !do d = 1, 3
-    !    call MPI_ALLGATHERV(r(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, r(d,:), sendcounts, displs, &
-    !    MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
-        
-    !    call MPI_ALLGATHERV(v(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, v(d,:), sendcounts, displs, &
-    !    MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
-
-    !end do
 
     call mainLoop(log_unit, traj_unit, rdf_unit, msd_unit, lj_epsilon, lj_sigma, mass, &
     n_steps, dt, L, T, andersen_nu, cutoff*L, gdr_num_bins, n_sweeps, r, v, write_stats, &

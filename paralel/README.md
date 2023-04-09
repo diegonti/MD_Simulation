@@ -23,7 +23,7 @@ In order to use the simulator, a parameter file must be supplied as a first argu
 
 To run the program:
 ``` 
-$ make run_parallel $NP
+$ make run_parallel nproc=NP
 ```
 Where `$NP` are the number of processors desired in order to run the program. Once the progam has finished succesfully, the output files will be created in the parent directory. Then the statistics and visualization can be generated with:
 ```

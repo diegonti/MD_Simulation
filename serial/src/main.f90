@@ -64,6 +64,8 @@ program main
     ! log_unit  -> file where the simulation time, energy, instant temperature, etc.. will be placed
     ! traj_name -> trajectory file, where the xyz of each snapshot is placed 
     ! rdf_name -> RDF file, where the RDF will be written 
+    ! msd_name -> MSD file, where the MSD will be written 
+
 
 
     log_name = trim(sim_name) // "_logfile.log"

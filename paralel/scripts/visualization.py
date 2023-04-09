@@ -139,7 +139,7 @@ if __name__ == "__main__":
     }
 
     MSD_params = {
-        "t": t,
+        "t": t2,
         "lines":MSD,
         "colours":"green",
         "labels":"MSD",

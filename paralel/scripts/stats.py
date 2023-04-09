@@ -198,11 +198,14 @@ if __name__=="__main__":
 	# Loading data from test files
 	dataT = np.loadtxt(ipath,skiprows=1)     			# Thermodynamic data
 	data = dataT.T                          			# Each parameter in a column
-	t,E,Epot,Ekin,Tinst,P,MSD,p = data      			# Getting each parameter
+	t,E,Epot,Ekin,Tinst,P,p = data      				# Getting each parameter
+	
+	dataMSD = np.loadtxt(sim_name+"_msd.log",skiprows=0).T
+	t2,MSD = dataMSD
 
 	# Defining data labels 
-	data_labels = ["E (kJ/mol)","Epot (kJ/mol)","Ekin (kJ/mol)","T (K)","P (Pa)","MSD (A^2)","Pt (kg*m/s)"]
-	data_labels_f = ["E(kJ/mol)","$E_{pot}$(kJ/mol)","$E_{kin}$(kJ/mol)","T(K)","P(Pa)","MSD($\\AA^2$)","$P_T$(kg*m/s)"]
+	data_labels = ["E (kJ/mol)","Epot (kJ/mol)","Ekin (kJ/mol)","T (K)","P (Pa)","Pt (kg*m/s)"]
+	data_labels_f = ["E(kJ/mol)","$E_{pot}$(kJ/mol)","$E_{kin}$(kJ/mol)","T(K)","P(Pa)","$P_T$(kg*m/s)"]
 
 	# Creating output file
 	outFile = sim_name+"_stats.log"
@@ -226,7 +229,7 @@ if __name__=="__main__":
 	for _,line in output: write(line,file=outFile)
 
 	# Difussion Coeffitient (linear fit of MSD to y= ax + b)
-	(a,b),D_residual,extra1,extra2,extra3 = np.polyfit(t[start:finish],MSD[start:finish],deg=1,full=True)
+	(a,b),D_residual,extra1,extra2,extra3 = np.polyfit(t2,MSD,deg=1,full=True)
 	D = a/6  * 1e12 /1e20 # (Diffusion coeffitient)
 	write(f"\nEstimated Difussion Coefitient (A^2/ps): D = {D}",file=outFile)
 
