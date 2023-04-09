@@ -63,7 +63,7 @@ contains
         allocate(F(3,N))
         allocate(gdr(gdr_num_bins))
         allocate(local_gdr(gdr_num_bins))
-        allocate(vlist(N**2))
+        allocate(vlist((N * (N + 1_I64) / 2_I64) + local_N))
         allocate(displacement(3, local_N))
         allocate(time_r(n_sweeps,3,N))
         allocate(v_MSD(N_steps))
@@ -74,6 +74,7 @@ contains
         r = r - (L / 2.0_dp)
         !r0(:,:) = r(:,:)  ! Saving initial configuration (for MSD)
         local_MSD = 0.0d0
+        displacement = 0.0_DP
 
         call compute_vlist(L, r, vcutoff, imin, imax, vlist)
 
@@ -167,7 +168,8 @@ contains
         do i = 1, gdr_num_bins
             call MPI_Reduce(local_gdr(i), gdr(i), 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
         end do
-        ! call MPI_REDUCE(local_MSD, v_MSD, N_steps, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+        
+        call MPI_REDUCE(local_MSD, v_MSD, int(N_steps, kind=i32), MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
         
         call writeRDF(gdr,rdf_unit,L,dr,lj_sigma,N,N_steps)
         call writeMSD(v_MSD, msd_unit, n_sweeps, write_log, lj_sigma, lj_epsilon, dt, mass)
