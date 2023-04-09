@@ -28,9 +28,9 @@ program main
     character(len=2048) :: cell_type, init_vel
 
     ! MPI memory definition
-    integer, parameter      :: MASTER = 0
-    integer                 :: taskid, ierror, numproc
-    integer(kind=i64)       :: imin, imax, local_N
+    integer, parameter                  :: MASTER = 0
+    integer                             :: taskid, ierror, numproc
+    integer(kind=i64)                   :: imin, imax, local_N
     integer,  allocatable, dimension(:) :: sendcounts, displs
 
 
@@ -92,23 +92,25 @@ program main
     end if
 
     ! INT64 Broadcasting
-    call MPI_Bcast(N, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(n_steps, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(write_file, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(write_stats, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(N,            1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(n_steps,      1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(write_file,   1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(write_stats,  1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(write_frame,  1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(gdr_num_bins, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(write_frame, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+
+    gdr_num_bins = 100_I64
 
     ! REAL64 Broadcasting
-    call MPI_Bcast(lj_epsilon, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(lj_sigma, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(mass, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(dt, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(density, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(lj_epsilon,  1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(lj_sigma,    1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(mass,        1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(dt,          1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(density,     1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(andersen_nu, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(T, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(cutoff, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(vcutoff, 1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(T,           1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(cutoff,      1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(vcutoff,     1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
     
     ! CHARACTER broadcasting
     call MPI_Bcast(cell_type, 2048, MPI_CHARACTER, MASTER, MPI_COMM_WORLD, ierror)
