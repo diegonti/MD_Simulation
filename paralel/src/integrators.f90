@@ -46,8 +46,8 @@ contains
 
         ! local variables
         real(kind=dp), dimension(:,:), allocatable   :: r0, rold, rnew, F, displacement
-        real(kind=dp)                                :: time, Etot,Epot,Ekin,Tinst,press,p_com_t,dr
-        real(kind=dp), dimension(3)                  :: p_com
+        real(kind=dp)                                :: time, Etot,Epot,Ekin,Tinst,press, p_com_t, dr
+        real(kind=dp), dimension(3)                  :: p_com, local_p_com
         real(kind=dp), dimension(:), allocatable     :: gdr, local_gdr, v_MSD, local_MSD
         real(kind=dp), dimension(:,:,:), allocatable :: time_r
         integer(kind=i64), dimension(:), allocatable :: vlist
@@ -103,6 +103,7 @@ contains
             if (i <= n_sweeps) then
                 time_r(i,:,:) = r
             end if
+            
             call MSD(r, time_r, L, i, n_sweeps, local_MSD, imin, imax)
 
             if (mod(i, write_log) == 0) then
@@ -111,22 +112,23 @@ contains
                 local_Ekin = calc_KE(v, imin, imax)
                 local_Epot = calc_vdw_pbc(r, cutoff, L, imin, imax, vlist)
                 local_virial = calc_pressure(L, r, cutoff, imin, imax, vlist)
-                call compute_com_momenta(v, p_com, imin, imax)
-                local_p_com_t = dsqrt(dot_product(p_com,p_com))
+                call compute_com_momenta(v, local_p_com, imin, imax)
+                !local_p_com_t = dsqrt(dot_product(p_com,p_com))
 
                 call MPI_Barrier(MPI_COMM_WORLD, ierror)
-                call MPI_Reduce(local_Ekin, Ekin, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
-                call MPI_Reduce(local_Epot, Epot, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+                call MPI_Reduce(local_Ekin, Ekin,     1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+                call MPI_Reduce(local_Epot, Epot,     1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
                 call MPI_Reduce(local_virial, virial, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
-                call MPI_Reduce(local_p_com_t, p_com_t, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
+                call MPI_Reduce(local_p_com, p_com,   3, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
 
                 if (irank == 0) then
 
                     Ekin = Ekin * 0.5_DP
                     Epot = Epot * 0.5_DP  ! To account for the double countiung because of verlet lists
+                    p_com_t = sqrt(dot_product(p_com, p_com))
 
                     Etot = Epot + Ekin
-                    Tinst = calc_Tinst(Ekin,N)
+                    Tinst = calc_Tinst(Ekin, N)
                     press = (real(N, kind=dp)*Tinst / (L**3)) + ((1.0_dp / (3.0_dp * (L**3))) * virial)
                     
                     call writeSystem(log_unit,lj_epsilon,lj_sigma,mass, time,Etot,Epot,Ekin,Tinst,&
