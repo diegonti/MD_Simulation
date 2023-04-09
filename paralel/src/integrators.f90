@@ -81,7 +81,7 @@ contains
         call g_r(local_gdr, r, 1_i64, gdr_num_bins, L, cutoff, imin, imax, vlist)
 
         if (irank == 0) then
-            write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  MSD Pt"
+            write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  Pt"
             write(output_unit,"(a)",advance='no') "Completed (%): "
         end if
 
