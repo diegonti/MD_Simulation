@@ -81,7 +81,7 @@ contains
 
         if (irank == 0) then
             write(log_unit, '(A)') "time  Etot  Epot  Ekin  Tinst  Pinst  MSD Pt"
-            !write(output_unit,"(a)",advance='no') "Completed (%): "
+            write(output_unit,"(a)",advance='no') "Completed (%): "
         end if
 
         ! call MPI_Barrier(MPI_COMM_WORLD, ierror)
