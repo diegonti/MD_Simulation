@@ -91,7 +91,7 @@ contains
 
         do i = 1, N_steps
             
-            time = real(i, kind=dp)*dt
+            
             !choose integrator depending on user?
             ! call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
             call vv_integrator(r, v, cutoff, L, dt, imin, imax, vlist, displacement)
@@ -115,7 +115,8 @@ contains
                 call MPI_Reduce(local_p_com, p_com,   3, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
 
                 if (irank == 0) then
-
+                    
+                    time = real(i, kind=dp)*dt
                     Ekin = Ekin * 0.5_DP
                     Epot = Epot * 0.5_DP  ! To account for the double countiung because of verlet lists
                     p_com_t = sqrt(dot_product(p_com, p_com))
