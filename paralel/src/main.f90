@@ -72,7 +72,7 @@ program main
         ! log_unit  -> file where the simulation time, energy, instant temperature, etc.. will be placed
         ! traj_name -> trajectory file, where the xyz of each snapshot is placed 
         ! rdf_name -> RDF file, where the RDF will be written 
-        ! msd_name -> MSD file, where the RDF will be written 
+        ! msd_name -> MSD file, where the MSD will be written 
 
         log_name = trim(sim_name) // "_logfile.log"
         open(newunit=log_unit, file=trim(log_name), access='sequential', action='write', &
@@ -98,9 +98,8 @@ program main
     call MPI_Bcast(write_file,   1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(write_stats,  1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
     call MPI_Bcast(write_frame,  1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
-    call MPI_Bcast(gdr_num_bins, 1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
-
-    gdr_num_bins = 100_I64
+    call MPI_Bcast(n_sweeps,     1, MPI_Int, MASTER, MPI_COMM_WORLD, ierror)
+    call MPI_Bcast(gdr_num_bins, 1, MPI_Long_Int, MASTER, MPI_COMM_WORLD, ierror)
 
     ! REAL64 Broadcasting
     call MPI_Bcast(lj_epsilon,  1, MPI_DOUBLE_PRECISION, MASTER, MPI_COMM_WORLD, ierror)
@@ -151,6 +150,7 @@ program main
         close(log_unit)
         close(traj_unit)
         close(rdf_unit)
+        close(msd_unit)
 
         ! ~ Program finalization ~
         end_time = MPI_Wtime()
