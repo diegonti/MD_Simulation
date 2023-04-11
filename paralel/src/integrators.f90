@@ -129,7 +129,7 @@ contains
 
                 end if
             end if
-            ! call MPI_Barrier(MPI_COMM_WORLD, ierror)
+
             
             if (mod(i, write_pos) == 0) then 
                 if (irank == 0) call writePositions(r, traj_unit)
