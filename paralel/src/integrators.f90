@@ -98,16 +98,6 @@ contains
             ! call euler()
             call vel_Andersen(v,nu,T, imin, imax)
 
-
-            call g_r(local_gdr, r, 2_i64, gdr_num_bins, L, cutoff, imin, imax, vlist)
-            
-            ! r = rnew
-
-            if (i <= n_sweeps) then
-                time_r(i,:,:) = r
-            end if
-            
-            call MSD(r, time_r, L, i, n_sweeps, local_MSD, imin, imax)
             
             if (mod(i, write_log) == 0) then
                 
