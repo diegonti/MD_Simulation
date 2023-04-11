@@ -53,7 +53,7 @@ contains
         real(kind=dp), dimension(:,:,:), allocatable :: time_r
         integer(kind=i64), dimension(:), allocatable :: vlist
         integer(kind=i64)                            :: i, N, d
-        real(kind=dp)                                :: local_Ekin, local_Epot, local_p_com_t, local_virial, virial
+        real(kind=dp)                                :: local_Ekin, local_Epot, local_virial, virial
         integer                                      :: ierror
 
         N = size(r,dim=2,kind=i64)
@@ -73,7 +73,7 @@ contains
 
         F = 0.0_dp
         rold = r
-        r = r - (L / 2.0_dp)
+        !r(:, imin:imax) = r(:, imin:imax) - (L / 2.0_dp)
 
         local_MSD = 0.0d0
         displacement = 0.0_DP
