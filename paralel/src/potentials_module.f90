@@ -59,7 +59,7 @@ contains
                 j_part = vlist(counter + neigh_idx)
 
                 ! Calculem rij
-                rij(:,1) = positions(1, i_part) - positions(:, j_part)
+                rij(:,1) = positions(:, i_part) - positions(:, j_part)
                 !rij(2,1) = positions(2, i_part) - positions(2, j_part)
                 !rij(3,1) = positions(3, i_part) - positions(3, j_part)
 
