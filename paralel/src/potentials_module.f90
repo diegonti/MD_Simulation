@@ -165,7 +165,7 @@ contains
 
                 i = vlist(counter + neigh_idx)
 
-                rij(:,1) = pos(1, j) - pos(:, i)
+                rij(:,1) = pos(:, j) - pos(:, i)
                 !rij(2,1) = pos(2, j) - pos(2, i)
                 !rij(3,1) = pos(3, j) - pos(3, i)
                 
