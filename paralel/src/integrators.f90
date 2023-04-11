@@ -53,7 +53,7 @@ contains
         real(kind=dp), dimension(:,:,:), allocatable :: time_r
         integer(kind=i64), dimension(:), allocatable :: vlist
         integer(kind=i64)                            :: i, N, d
-        real(kind=dp)                                :: local_Ekin, local_Epot, local_p_com_t, local_virial, virial
+        real(kind=dp)                                :: local_Ekin, local_Epot, local_virial, virial
         integer                                      :: ierror
 
         N = size(r,dim=2,kind=i64)
@@ -73,7 +73,7 @@ contains
 
         F = 0.0_dp
         rold = r
-        r = r - (L / 2.0_dp)
+        !r(:, imin:imax) = r(:, imin:imax) - (L / 2.0_dp)
 
         local_MSD = 0.0d0
         displacement = 0.0_DP
@@ -91,7 +91,7 @@ contains
 
         do i = 1, N_steps
             
-            time = real(i, kind=dp)*dt
+            
             !choose integrator depending on user?
             ! call verlet_step(rnew, r, rold, v, F, dt, L, cutoff)
             call vv_integrator(r, v, cutoff, L, dt, imin, imax, vlist, displacement)
@@ -115,7 +115,8 @@ contains
                 call MPI_Reduce(local_p_com, p_com,   3, MPI_DOUBLE_PRECISION, MPI_SUM, 0, MPI_COMM_WORLD, ierror)
 
                 if (irank == 0) then
-
+                    
+                    time = real(i, kind=dp)*dt
                     Ekin = Ekin * 0.5_DP
                     Epot = Epot * 0.5_DP  ! To account for the double countiung because of verlet lists
                     p_com_t = sqrt(dot_product(p_com, p_com))
@@ -129,7 +130,7 @@ contains
 
                 end if
             end if
-            ! call MPI_Barrier(MPI_COMM_WORLD, ierror)
+
             
             if (mod(i, write_pos) == 0) then 
                 if (irank == 0) call writePositions(r, traj_unit)
@@ -164,7 +165,7 @@ contains
 
             call MSD(r, time_r, L, i, n_sweeps, local_MSD, imin, imax)
             call g_r(local_gdr, r, 2_i64, gdr_num_bins, L, cutoff, N_steps, imin, imax, vlist)
-            call MPI_Barrier(MPI_COMM_WORLD, ierror)
+            ! call MPI_Barrier(MPI_COMM_WORLD, ierror)
 
         end do
 
