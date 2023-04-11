@@ -126,10 +126,6 @@ contains
                     do neigh_index = 1, n_neigh
                         i = vlist(counter + neigh_index)
 
-                        if (i < j) then
-                            cycle
-                        end if
-
                         ! Calculem rij
                         rij(:, 1) = pos(:, j) - pos(:, i)
                         call pbc(rij, L)
