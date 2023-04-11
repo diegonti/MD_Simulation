@@ -155,7 +155,7 @@ if __name__ == "__main__":
         "colours":"r",
         "labels":"RDF$",
         "file_name":"RDF.png", 
-        "start":start,"finish":finish,
+        "start":None,"finish":None,
         "xlabel":"r ($\AA$)", "ylabel":"RDF"
     }
 
