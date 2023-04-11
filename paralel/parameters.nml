@@ -14,7 +14,7 @@
                                 ! The number of particles must follow the formula n_particles = f*M^3
                                 ! where f is the number of atoms in the selected cell and M an integer.
                                 ! f(sc)=1, f(bcc)=2, f(fcc)=4
-  cutoff = 0.4,                 ! Cut-off for the energy and force potential truncation (in fraction of box length, max 0.5)
+  cutoff = 0.45,                 ! Cut-off for the energy and force potential truncation (in fraction of box length, max 0.47)
   vlcutoff = 0.6,               ! Cut-off to construct the verlet list buffer zone
 
   ! I/O variables
@@ -29,6 +29,6 @@
 
   ! Analysis dependent variables
   gdr_num_bins = 100,           ! Number of bins for RDF calculation
-  n_sweeps = 100,	              ! Number of sweeps to compute for the MSD
+  n_sweeps = 100,	        ! Number of sweeps to compute for the MSD
 
 /

@@ -75,38 +75,26 @@ module writers_m
 
     end subroutine writePositions
 
-    subroutine writeRdf(rdf,unit,L,dr,ljsigma,N,n_gdr)
+
+    subroutine writeRdf(rdf,unit, ljsigma)
         ! Writes positions and rdf in 2 columns.
         !
         ! Args:
+        !   dr      (REAL64)       : step dr
         !   rdf     (REAL64[bins]) : radial distribution function values at 0, dr, 2dr,...
         !   unit    (INT64)        : File unit to write on.
-        !   L       (REAL64)       : Side of simulation box in reduced units
-        !   dr      (REAL64)       : step dr
-        !   ljsigma (REAL64)       : ru of length
-        !   N       (INT64)        : number of particles
-        !   n_gdr   (INT64)        : number of frames taken into account for the RDF
-
         implicit none
         ! In/Out variables
-        double precision, intent(in), dimension(:)   :: rdf
-        real(kind=dp), intent(in)                    :: ljsigma, L, dr
-        integer(kind=i64), intent(in)                :: unit, n_gdr, N
+        double precision, intent(in), dimension(:,:) :: rdf
+        real(kind=dp), intent(in)                    :: ljsigma
+        integer(kind=i64), intent(in)                :: unit
         ! Internal variables
         integer(kind=i64)                            :: i, N_bins
-        double precision, dimension(size(rdf))       :: rdf_aux
-        double precision, parameter                  :: pi = dacos(-1.0d0)
-        double precision                             :: ndg, dens, ndg_i
 
-        N_bins = size(rdf, kind=i64) ! number of bins
-        dens = dble(N) /L**3
-        ndg = 4.0d0 / 3.0d0 * pi * dens * dr**3
+        N_bins = size(rdf, kind=i64, dim=2)
 
         do i= 1, N_bins
-            ndg_i = ndg * ( (dble(i+1))**3 - dble(i)**3 )
-            rdf_aux(i) = rdf(i) / (dble(N) * ndg_i * dble(n_gdr))
-
-            write(unit,*) dr*dble(i)*ljsigma, rdf_aux(i)
+            write(unit,*) rdf(1,i)*ljsigma, rdf(2, i)
         end do
 
     end subroutine writeRdf
