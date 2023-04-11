@@ -164,7 +164,7 @@ contains
 
             call MSD(r, time_r, L, i, n_sweeps, local_MSD, imin, imax)
             call g_r(local_gdr, r, 2_i64, gdr_num_bins, L, cutoff, N_steps, imin, imax, vlist)
-            call MPI_Barrier(MPI_COMM_WORLD, ierror)
+            ! call MPI_Barrier(MPI_COMM_WORLD, ierror)
 
         end do
 
