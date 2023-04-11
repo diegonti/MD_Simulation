@@ -176,6 +176,7 @@ contains
 
         if (irank == 0) then
             gdr(1,:) = local_gdr(1,:)
+            gdr(2,:) = 0.5d0 * gdr(2,:)
             call g_r(gdr, r, 3_i64, gdr_num_bins, L, cutoff, N_steps, imin, imax, vlist)
             call writeRDF(gdr, rdf_unit, lj_sigma)
             call writeMSD(v_MSD, msd_unit, n_sweeps, write_log, lj_sigma, lj_epsilon, dt, mass)
