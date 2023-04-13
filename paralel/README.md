@@ -51,3 +51,9 @@ And to clean all the generated compilation files, use:
 ```
 $ make clean
 ```
+
+## Examples
+
+A speedup run was performed in the Marenostrum4 HPC cluster, from 1 to 48 cores. In the `test/` folder are the results of the runs with 2, 4 and 48 processors.
+
+In there, the `launch_speedup (BSC).sh` submition script was used to send the calculations. The program was compiled with OpenMPI 4.1.2.
