@@ -108,6 +108,6 @@ program main
     ! ~ Program finalization ~
     call cpu_time(end_time)
     write(output_unit,'(A)') ''
-    write(output_unit, '(A,F12.8,A)') 'Execution done in: ', end_time - init_time, ' seconds.'
+    write(output_unit, '(A,ES18.8e4,A)') 'Execution done in: ', end_time - init_time, ' seconds.'
 
 end program main
