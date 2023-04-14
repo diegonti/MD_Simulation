@@ -98,6 +98,15 @@ contains
             ! call euler()
             call vel_Andersen(v,nu,T, imin, imax)
 
+            call MPI_Barrier(MPI_COMM_WORLD, ierror)
+            
+            do d = 1, 3
+                call MPI_ALLGATHERV(r(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, r(d,:), sendcounts, displs, &
+                MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
+                
+                call MPI_ALLGATHERV(v(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, v(d,:), sendcounts, displs, &
+                MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
+            end do
             
             if (mod(i, write_log) == 0) then
                 
@@ -148,16 +157,6 @@ contains
                 !real(count(vlist > 0_I64, kind=i64) - local_N, kind=dp) / real(local_N, kind=dp)
                 displacement = 0.0_DP
             end if
-
-            call MPI_Barrier(MPI_COMM_WORLD, ierror)
-            
-            do d = 1, 3
-                call MPI_ALLGATHERV(r(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, r(d,:), sendcounts, displs, &
-                MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
-                
-                call MPI_ALLGATHERV(v(d,imin:imax), int(local_N), MPI_DOUBLE_PRECISION, v(d,:), sendcounts, displs, &
-                MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierror)
-            end do
 
             if (i <= n_sweeps) then
                 time_r(i,:,imin:imax) = r(:,imin:imax)
@@ -267,7 +266,7 @@ contains
         positions(:, imin:imax) = positions(:, imin:imax) + (dt*velocities(:, imin:imax)) + (0.5d0*dt*dt*forces(:, imin:imax))
         dsp(:, :) = dsp(:, :) + positions(:, imin:imax)
 
-        call PBC(positions, L)
+        call PBC(positions(:, imin:imax), L)
 
         velocities(:, imin:imax) = velocities(:, imin:imax) + (0.5d0*dt*forces(:, imin:imax))
 
