@@ -267,7 +267,7 @@ contains
         positions(:, imin:imax) = positions(:, imin:imax) + (dt*velocities(:, imin:imax)) + (0.5d0*dt*dt*forces(:, imin:imax))
         dsp(:, :) = dsp(:, :) + positions(:, imin:imax)
 
-        call PBC(positions, L)
+        call PBC(positions(:, imin:imax), L)
 
         velocities(:, imin:imax) = velocities(:, imin:imax) + (0.5d0*dt*forces(:, imin:imax))
 
